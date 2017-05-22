@@ -5,8 +5,8 @@ class Balances(object):
         self.time     = time
         
     def __getitem__ (self, key):
-        return self.balances[key]
-    
+        return self.balances.get(key, 0)
+
     def held_coins (self):
         return [k  for k in self.balances.keys() 
                 if self.balances[k] > 0 ]
@@ -19,15 +19,13 @@ class Balances(object):
         }
 
     # self, Purchase -> Balance
-    def apply_purchases (self, time, purchases, fiat='BTC'):
+    def apply_purchases (self, time, purchases):
         new_balances = self.balances.copy()
-        total_fiat_investment = sum([p.investment_fiat 
-                                     for p in purchases])
-        new_balances[fiat] = self.balances[fiat] - total_fiat_investment
-        for coin, amount, _ in purchases:
-            if coin not in new_balances:
-                new_balances[coin] = 0
-            new_balances[coin] += amount
+        for from_coin, from_amount, to_coin, to_amount in purchases:
+            new_balances[from_coin] -= from_amount
+            if to_coin not in new_balances:
+                new_balances[to_coin] = 0
+            new_balances[to_coin] += to_amount
         return Balances(time, new_balances)
 
     def estimate_value (self, charts):

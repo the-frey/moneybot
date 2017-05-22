@@ -1,4 +1,8 @@
 from collections import namedtuple
 
-Trade = namedtuple('Trade', ['coin', 'investment_fiat'])
-Purchase = namedtuple('Purchase', ['coin', 'amount', 'investment_fiat'])
+Trade = namedtuple('Trade', [
+	'from_coin', 'from_amount', 'to_coin'
+])
+Purchase = namedtuple('Purchase', [
+	'from_coin', 'from_amount', 'to_coin', 'to_amount'
+])

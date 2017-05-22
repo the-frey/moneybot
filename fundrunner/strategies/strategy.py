@@ -1,4 +1,4 @@
-from . import Purchase
+from .. import Purchase
 
 class Strategy (object):
     def __init__ (self, coinstore, initial_balances, start_time, end_time, 
@@ -20,8 +20,12 @@ class Strategy (object):
     def get_trades (self, current_chart_data, current_balances, fiat='BTC'):
         raise NotImplementedError
     
-    def get_purchase_amounts (self, current_chart_data, trade, fee=0.0025):
-        coin_close = current_chart_data[trade.coin]['close']
-        investment = trade.investment_fiat - (trade.investment_fiat * fee)
-        amount = investment / coin_close 
-        return Purchase(trade.coin, amount, trade.investment_fiat)
+    def get_purchase_amounts (self, current_chart_data, trade, fee=0.0025, fiat='BTC'):
+        if trade.to_coin == fiat:
+            to_price = 1 / current_chart_data[trade.from_coin]['close']
+        else:
+            to_price = current_chart_data[trade.to_coin]['close']
+        print('to_price', trade.to_coin, to_price)
+        from_investment = trade.from_amount - (trade.from_amount * fee)
+        to_amount = from_investment / to_price
+        return Purchase(trade.from_coin, trade.from_amount, trade.to_coin, to_amount)
