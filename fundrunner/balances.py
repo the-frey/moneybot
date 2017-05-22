@@ -3,20 +3,13 @@ class Balances(object):
     def __init__(self, time, balances):
         self.balances = balances
         self.time     = time
-        
+
     def __getitem__ (self, key):
         return self.balances.get(key, 0)
 
     def held_coins (self):
-        return [k  for k in self.balances.keys() 
+        return [k  for k in self.balances.keys()
                 if self.balances[k] > 0 ]
-    
-    def to_influx_point (self):
-        return {
-            'measurement': 'balance',
-            'time': self.time,
-            'fields': self.balances,
-        }
 
     # self, Purchase -> Balance
     def apply_purchases (self, time, purchases):
@@ -28,18 +21,26 @@ class Balances(object):
             new_balances[to_coin] += to_amount
         return Balances(time, new_balances)
 
-    def estimate_value (self, charts):
+    def estimate_values (self, charts, key):
+        values = {}
         remove = []
-        value = 0
         for coin, amount_held in self.balances.items():
             try:
-                value += charts[coin]['close'] * amount_held
+                values[coin] = charts[coin][key] * amount_held
             except KeyError:
                 # Remove the coin -- it has been delisted.
                 remove.append(coin)
         for removal in remove:
             self.balances.pop(removal)
-        return value
+        return values
+
+    def estimate_total_fiat_value (self, charts):
+        vs = self.estimate_values(charts, 'close')
+        return sum(vs.values())
+
+    def estimate_total_usd_value (self, charts):
+        vs = self.estimate_values(charts, 'price_usd')
+        return sum(vs.values())
 
     # Balances.from_poloniex(poloniex_client)
     def from_poloniex(poloniex_client):

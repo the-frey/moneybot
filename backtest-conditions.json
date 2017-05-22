@@ -1,0 +1,26 @@
+{
+  "market": {
+    "bull": {
+      "start": "2017-01-01",
+      "end": "2017-05-01"
+    },
+    "bear": {
+      "start": "2016-01-01",
+      "end": "2016-05-01"
+    }
+  },
+  "frequency": {
+    "hi": {
+      "trading_frequency_hours": 1
+    },
+    "mid": {
+      "trading_frequency_hours": 6
+    },
+    "lo": {
+      "trading_frequency_hours": 24
+    },
+    "medieval": {
+      "trading_frequency_hours": 168 
+    }
+  }
+}
