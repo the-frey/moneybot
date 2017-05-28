@@ -1,8 +1,9 @@
 class Balances(object):
     # balances = { 'COIN': coin_amt }
-    def __init__(self, time, balances):
+    def __init__(self, time, balances, fiat='BTC'):
         self.balances = balances
         self.time     = time
+        self.fiat     = fiat
 
     def __getitem__ (self, key):
         return self.balances.get(key, 0)
@@ -21,12 +22,16 @@ class Balances(object):
             new_balances[to_coin] += to_amount
         return Balances(time, new_balances)
 
-    def estimate_values (self, charts, key):
+    def estimate_values (self, charts, key='average'):
         values = {}
         remove = []
         for coin, amount_held in self.balances.items():
             try:
-                values[coin] = charts[coin][key] * amount_held
+                if coin == self.fiat:
+                    values[coin] = amount_held
+                else:
+                    relevant_market = '{!s}_{!s}'.format(self.fiat, coin)
+                    values[coin] = charts[relevant_market][key] * amount_held
             except KeyError:
                 # Remove the coin -- it has been delisted.
                 remove.append(coin)
@@ -35,11 +40,7 @@ class Balances(object):
         return values
 
     def estimate_total_fiat_value (self, charts):
-        vs = self.estimate_values(charts, 'close')
-        return sum(vs.values())
-
-    def estimate_total_usd_value (self, charts):
-        vs = self.estimate_values(charts, 'price_usd')
+        vs = self.estimate_values(charts)
         return sum(vs.values())
 
     # Balances.from_poloniex(poloniex_client)

@@ -16,45 +16,21 @@ client = InfluxDBClient(config['db']['hostname'],
                         config['db']['password'],
                         config['db']['database'])
 
-coinstore = CoinStore(client)
-conditions = json.load(open('backtest-conditions.json', 'r'))
+# see historical poloneix repo for minutes durations
+trading_frequency_minutes = 1440
 
+coinstore = CoinStore(client, trading_frequency_minutes)
 
-def test_over (strat, market_condition, frequency_condition):
-    start = conditions['market'][market_condition]['start']
-    end   = conditions['market'][market_condition]['end']
-    hrs   = conditions['frequency'][frequency_condition]['trading_frequency_hours']
-    return evaluate(strat,
-                    start, end, duration_days=30,
-                    verbose=True, window_distance_days=30,
-                    trading_frequency_hours=hrs)
+# strat = BuyHoldStrategy(
+# strat = BuffedCoinStrategy(
+strat = PeakRiderStrategy(
+    coinstore,
+    {'BTC': 1},)
 
-strategies = [
-        {'name': 'buyholdstrategy', 'fn': BuyHoldStrategy, },
-        {'name': 'buffedcoinstrategy', 'fn': BuffedCoinStrategy, },
-        {'name': 'peakriderstrategy', 'fn': PeakRiderStrategy, },
-]
+summary = evaluate(strat,
+                   '2017-01-01', '2017-05-26',
+                   duration_days=30,
+                   verbose=True, window_distance_days=30,
+                   trading_frequency_minutes=trading_frequency_minutes)
 
-print('starting')
-# summary = test_over(strat, 'bull', 'medieval')
-# print(summary)
-rows = []
-for market_condition in conditions['market']:
-    print('market', market_condition)
-    for frequency in conditions['frequency']:
-        print('frequency', frequency)
-        for strategy in strategies:
-            strat = strategy['fn'](
-                coinstore,
-                {'BTC': 1},)
-            summary = test_over(strat, market_condition, frequency)
-            summary['market_condition'] = market_condition
-            summary['trading_frequency'] = frequency
-            summary['strategy'] = strategy['name']
-            rows.append(summary)
-        # for freq in conditions['frequency']:
-            # print(market, freq)
-
-import pandas as pd
-df = pd.DataFrame(rows)
-df.to_csv('data-exploration/equal-weight-strategies-perfs.csv')
+print(summary)

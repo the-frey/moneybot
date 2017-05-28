@@ -5,7 +5,7 @@ from .utils import is_buffed
 
 def find_buffed_coins (chart_data, balances):
     # if we hold other stuff,
-    est_values = balances.estimate_values(chart_data, 'close')
+    est_values = balances.estimate_values(chart_data)
     buffed_coins = [
       coin for coin in held_coins_with_chart_data(chart_data, balances)
       if is_buffed(coin, est_values)
