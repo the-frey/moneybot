@@ -16,18 +16,22 @@ client = InfluxDBClient(config['db']['hostname'],
                         config['db']['password'],
                         config['db']['database'])
 
-coinstore = CoinStore(client)
 conditions = json.load(open('backtest-conditions.json', 'r'))
 
-
-def test_over (strat, market_condition, frequency_condition):
+def test_over (strategy, market_condition, frequency_condition):
     start = conditions['market'][market_condition]['start']
     end   = conditions['market'][market_condition]['end']
-    hrs   = conditions['frequency'][frequency_condition]['trading_frequency_hours']
-    return evaluate(strat,
-                    start, end, duration_days=30,
-                    verbose=True, window_distance_days=30,
-                    trading_frequency_hours=hrs)
+    minutes = conditions['frequency'][frequency_condition]['trading_frequency_minutes']
+    coinstore = CoinStore(client, minutes)
+    strat = strategy['fn'](
+            coinstore,
+            {'BTC': 1},)
+    summary = evaluate(strat,
+                       start, end,
+                       duration_days=30,
+                       verbose=True, window_distance_days=30,
+                       trading_frequency_minutes=minutes)
+    return summary
 
 strategies = [
         {'name': 'buyholdstrategy', 'fn': BuyHoldStrategy, },
@@ -36,18 +40,13 @@ strategies = [
 ]
 
 print('starting')
-# summary = test_over(strat, 'bull', 'medieval')
-# print(summary)
 rows = []
 for market_condition in conditions['market']:
     print('market', market_condition)
     for frequency in conditions['frequency']:
         print('frequency', frequency)
         for strategy in strategies:
-            strat = strategy['fn'](
-                coinstore,
-                {'BTC': 1},)
-            summary = test_over(strat, market_condition, frequency)
+            summary = test_over(strategy, market_condition, frequency)
             summary['market_condition'] = market_condition
             summary['trading_frequency'] = frequency
             summary['strategy'] = strategy['name']

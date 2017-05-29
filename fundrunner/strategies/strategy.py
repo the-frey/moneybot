@@ -1,6 +1,6 @@
 from .. import Purchase
 from ..balances import Balances
-from .utils import get_purchase_amounts
+from .utils import get_purchases
 
 class Strategy (object):
     def __init__ (self, coinstore, initial_balances,
@@ -16,13 +16,14 @@ class Strategy (object):
             yield val
 
     def step (self, time):
-        charts = self.coinstore.available_coins(time)
-        trades = self.get_trades(charts, self.balances)
-        purchases = [get_purchase_amounts(charts, trade) for trade in trades]
+        charts        = self.coinstore.latest_candlesticks(time)
+        trades        = self.get_trades(charts, self.balances)
+        purchases     = [get_purchases(charts, trade) for trade in trades]
         self.balances = self.balances.apply_purchases(time, purchases)
-        value = self.balances.estimate_total_usd_value(charts)
-        return value
+        btc_value     = self.balances.estimate_total_fiat_value(charts)
+        usd_btc_price = self.coinstore.btc_price(time)
+        usd_value     = btc_value * usd_btc_price
+        return usd_value
 
     # def get_trades (self, current_chart_data, current_balances, fiat='BTC'):
     #     raise NotImplementedError
-
