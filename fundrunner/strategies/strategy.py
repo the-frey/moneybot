@@ -16,7 +16,7 @@ class Strategy (object):
             yield val
 
     def step (self, time):
-        charts        = self.coinstore.available_markets(time)
+        charts        = self.coinstore.latest_candlesticks(time)
         trades        = self.get_trades(charts, self.balances)
         purchases     = [get_purchases(charts, trade) for trade in trades]
         self.balances = self.balances.apply_purchases(time, purchases)

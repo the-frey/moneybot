@@ -7,7 +7,8 @@ class CoinStore(object):
         self.minutes = minutes_candlestick_duration
         self.client = influx_client
 
-    def available_markets (self, time):
+    # String -> { 'BTC_ETH': { open, high, low, close, average } ... }
+    def latest_candlesticks (self, time):
         q ='''
         select * from candlestick
         where minutes = '{!s}'
@@ -22,6 +23,7 @@ class CoinStore(object):
                                  for r in result_set.items() }
         return coin_generator_tuples
 
+    # String -> Float
     def btc_price (self, time,
                    key='average'):
         q ='''
@@ -35,6 +37,7 @@ class CoinStore(object):
         result_set = self.client.query(q)
         return list(result_set.get_points())[-1][key]
 
+    # String, String -> [ Float... ]
     def market_history (self, currency_pair, time,
                             days_back=30, key='average'):
         q ='''

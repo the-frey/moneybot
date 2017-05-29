@@ -17,9 +17,10 @@ def available_markets (chart_data):
 def held_coins_with_chart_data (chart_data, balances,
                                 fiat='BTC'):
     avail_markets = available_markets(chart_data)
+    # Extract the coin name from each available fiat-to-coin market
     avail_coins   = [coin_names(market)[1] for market in avail_markets]
-    # HACK
-    avail_coins += [fiat]
+    # The fiat is always available, so we'll add that to the list as well
+    avail_coins  += [fiat]
     return set(balances.held_coins()).intersection(avail_coins)
 
 def get_purchases (current_chart_data, trade,

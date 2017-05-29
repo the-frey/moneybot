@@ -21,8 +21,7 @@ trading_frequency_minutes = 1440
 
 coinstore = CoinStore(client, trading_frequency_minutes)
 
-# strat = BuyHoldStrategy(
-# strat = BuffedCoinStrategy(
+# Try BuyHoldStrategy or BuffedCoinStrategy too
 strat = PeakRiderStrategy(
     coinstore,
     {'BTC': 1},)
