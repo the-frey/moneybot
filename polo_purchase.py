@@ -1,6 +1,6 @@
 from influxdb import InfluxDBClient
 import json
-from fundrunner.coinstore import LiveCoinStore
+from fundrunner.coinstore import HistoricalCoinStore, LiveCoinStore
 from fundrunner.market import PoloniexMarket
 from fundrunner.balances import Balances
 from fundrunner.strategies.buffedcoinstrategy import BuffedCoinStrategy
@@ -18,10 +18,12 @@ client = InfluxDBClient(config['db']['hostname'],
                         config['db']['database'])
 
 market = PoloniexMarket(config['poloniex']['pk'], config['poloniex']['sk'])
-# print(market.get_balances())
-lcs = LiveCoinStore(market)
-print(lcs.btc_price())
 
+lcs = LiveCoinStore(market)
+# see historical poloneix repo for minutes durations
+# trading_frequency_minutes = 5
+
+# coinstore = CoinStore(client, trading_frequency_minutes)
 current_bals = market.get_balances()
 strat = BuffedCoinStrategy(
   lcs,
@@ -29,7 +31,5 @@ strat = BuffedCoinStrategy(
 )
 
 strat.set_market(market)
-print(current_bals)
-
 strat.balances = Balances(pd.Timestamp(datetime.now()), current_bals)
 print(strat.step(pd.Timestamp(datetime.now())))
