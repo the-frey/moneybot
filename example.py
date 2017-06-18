@@ -1,6 +1,6 @@
 from influxdb import InfluxDBClient
 import json
-from fundrunner.coinstore import CoinStore
+from fundrunner.coinstore import HistoricalCoinStore
 from fundrunner.strategies.buyholdstrategy import BuyHoldStrategy
 from fundrunner.strategies.buffedcoinstrategy import BuffedCoinStrategy
 from fundrunner.strategies.peakriderstrategy import PeakRiderStrategy
@@ -19,7 +19,7 @@ client = InfluxDBClient(config['db']['hostname'],
 # see historical poloneix repo for minutes durations
 trading_frequency_minutes = 1440
 
-coinstore = CoinStore(client, trading_frequency_minutes)
+coinstore = HistoricalCoinStore(client, trading_frequency_minutes)
 
 # Try BuyHoldStrategy or BuffedCoinStrategy too
 strat = PeakRiderStrategy(

@@ -1,7 +1,7 @@
 import pandas as pd
+import requests
 
-class CoinStore(object):
-
+class HistoricalCoinStore(object):
     def __init__(self, influx_client, minutes_candlestick_duration):
 
         self.minutes = minutes_candlestick_duration
@@ -52,3 +52,14 @@ class CoinStore(object):
         df = pd.Series([p[1] for p in prices])
         df.index = [p[0] for p in prices]
         return df
+
+class LiveCoinStore(object):
+    def __init__(self, market):
+        self.market = market
+
+    def latest_candlesticks (self, time=''):
+        return self.market.latest_chart_data()
+
+    def btc_price (self, time=''):
+        rate = requests.get('https://api.gemini.com/v1/pubticker/btcusd').json()
+        return (float(rate['bid'])+float(rate['ask']))/2

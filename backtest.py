@@ -1,6 +1,6 @@
 from influxdb import InfluxDBClient
 import json
-from fundrunner.coinstore import CoinStore
+from fundrunner.coinstore import HistoricalCoinStore
 from fundrunner.strategies.buyholdstrategy import BuyHoldStrategy
 from fundrunner.strategies.buffedcoinstrategy import BuffedCoinStrategy
 from fundrunner.strategies.peakriderstrategy import PeakRiderStrategy
@@ -22,7 +22,7 @@ def test_over (strategy, market_condition, frequency_condition):
     start = conditions['market'][market_condition]['start']
     end   = conditions['market'][market_condition]['end']
     minutes = conditions['frequency'][frequency_condition]['trading_frequency_minutes']
-    coinstore = CoinStore(client, minutes)
+    coinstore = HistoricalCoinStore(client, minutes)
     strat = strategy['fn'](
             coinstore,
             {'BTC': 1},)

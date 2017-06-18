@@ -5,4 +5,4 @@ python-dateutil==2.6.0
 pytz==2017.2
 requests==2.14.2
 six==1.10.0
-wsgiref==0.1.2
+git+git://github.com/s4w3d0ff/python-poloniex.git@391906446914daa3396a5562d829abb19cd4d3c8

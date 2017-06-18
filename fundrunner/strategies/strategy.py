@@ -4,10 +4,11 @@ from .utils import get_purchases
 
 class Strategy (object):
     def __init__ (self, coinstore, initial_balances,
-                  fiat='BTC'):
+                  market=None, fiat='BTC'):
         self.fiat = fiat
         self.coinstore = coinstore
         self.initial_balances = initial_balances
+        self.market = market
 
     def begin_backtest (self, dates):
         self.balances = Balances(dates[0], self.initial_balances)
@@ -19,6 +20,9 @@ class Strategy (object):
         charts        = self.coinstore.latest_candlesticks(time)
         trades        = self.get_trades(charts, self.balances)
         purchases     = [get_purchases(charts, trade) for trade in trades]
+        print(purchases)
+        if self.market:
+            results   = [self.market.make_purchase(purchase) for purchase in purchases]
         self.balances = self.balances.apply_purchases(time, purchases)
         btc_value     = self.balances.estimate_total_fiat_value(charts)
         usd_btc_price = self.coinstore.btc_price(time)
@@ -27,3 +31,6 @@ class Strategy (object):
 
     # def get_trades (self, current_chart_data, current_balances, fiat='BTC'):
     #     raise NotImplementedError
+
+    def set_market(self, market):
+        self.market = market
