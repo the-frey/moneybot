@@ -9,7 +9,7 @@ def find_buffed_coins (chart_data, balances):
     print(est_values)
     buffed_coins = [
       coin for coin in held_coins_with_chart_data(chart_data, balances)
-      if is_buffed(coin, est_values)
+      if is_buffed(coin, est_values, multiplier=1.5)
       # if is_buffed_fancy(coin, est_values)
       # if is_buffed_fancy2(coin, est_values)
     ]
