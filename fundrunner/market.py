@@ -24,14 +24,30 @@ class PoloniexMarket(Market):
       print("BUY", market, purchase.to_amount)
       # market, (FIAT / OTHER), OTHER
       if purchase.from_amount > 0.0001:
-        return self.polo.buy(market, rate, purchase.to_amount)
+        res = self.polo.buy(market, rate, purchase.to_amount)
     elif purchase.to_coin == fiat:
       market = fiat + "_" + purchase.from_coin
       rate = purchase.to_amount / purchase.from_amount
       print("SELL", market, purchase.to_amount)
       # market, (FIAT / OTHER), OTHER
       if purchase.to_amount > 0.0001:
-        return self.polo.sell(market, rate, purchase.from_amount)
+        res = self.polo.sell(market, rate, purchase.from_amount)
+    # Wait, then see if any orders still open
+    sleep(1)
+    _, coin_pairs = self.cancel_open_orders()
+    # if we canceled some order
+    if coin_pairs is not None:
+        for coin_pair in coin_pairs:
+            purchaseList = list(purchase)
+            if purchaseList[0] == fiat:
+              purchaseList[3] = purchaseList[3] - purchaseList[3] * 0.01
+            elif purchaseList[2] == fiat:
+              purchaseList[1] = purchaseList[1] - purchaseList[1] * 0.01
+            newPurchase = Purchase(purchaseList[0], purchaseList[1], purchaseList[2], purchaseList[3])
+            print(newPurchase)
+            # Recursively make_purchase
+            return self.make_purchase(newPurchase)
+    return
 
   def open_orders(self):
     open_orders = self.polo.returnOpenOrders()

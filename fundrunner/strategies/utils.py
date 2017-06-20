@@ -1,4 +1,3 @@
-from .. import Trade
 from .. import Purchase
 import numpy as np
 import pandas as pd
@@ -23,32 +22,32 @@ def held_coins_with_chart_data (chart_data, balances,
     avail_coins  += [fiat]
     return set(balances.held_coins()).intersection(avail_coins)
 
-def get_purchases (current_chart_data, trade,
+
+def get_purchase (current_chart_data, from_coin, from_amount, to_coin,
                    fee=0.0025, fiat='BTC', price_key='weightedAverage'):
-    if trade.to_coin == fiat:
-        market_name = '{!s}_{!s}'.format(fiat, trade.from_coin)
+    if to_coin == fiat:
+        market_name = '{!s}_{!s}'.format(fiat, from_coin)
         to_price = 1 / current_chart_data[market_name][price_key]
     else:
-        market_name = '{!s}_{!s}'.format(fiat, trade.to_coin)
+        market_name = '{!s}_{!s}'.format(fiat, to_coin)
         to_price = current_chart_data[market_name][price_key]
-    from_investment = trade.from_amount - (trade.from_amount * fee)
+    from_investment = from_amount - (from_amount * fee)
     to_amount = from_investment / to_price
-    return Purchase(trade.from_coin, trade.from_amount, trade.to_coin, to_amount)
+    return Purchase(from_coin, from_amount, to_coin, to_amount)
+
 
 '''
 Initial allocation tools
 '''
 
-def initial_trades_equal_alloc (chart_data, balances, fiat):
+def initial_purchases_equal_alloc (chart_data, balances, fiat):
     avail = available_markets(chart_data, fiat)
     amount_to_invest_per_coin = balances[fiat] / ( len(avail) + 1.0 )
-    trades = [ Trade(fiat, amount_to_invest_per_coin, coin_names(market)[1])
-               for market in avail ]
-    return trades
-
-def initial_purchases_equal_alloc (chart_data, balances, fiat):
-    trades = initial_trades_equal_alloc(chart_data, balances, fiat)
-    purchases = [ get_purchases (chart_data, trade) for trade in trades ]
+    purchases = [ get_purchase(chart_data, 
+                                fiat, 
+                                amount_to_invest_per_coin, 
+                                coin_names(market)[1])
+                for market in avail ]
     return purchases
 
 
@@ -56,28 +55,40 @@ def initial_purchases_equal_alloc (chart_data, balances, fiat):
 Rebalancing tools
 '''
 
-def rebalancing_trades_equal_alloc (coins_to_rebalance, chart_data, balances, fiat):
+
+def rebalancing_purchases_equal_alloc (coins_to_rebalance, chart_data, balances, fiat):
     avail = available_markets(chart_data, fiat)
     total_value = balances.estimate_total_fiat_value(chart_data)
-    ideal_value_fiat = total_value / len(avail)
-    # Note: Below estimates the trades, might not reflect real trades/purchases.
-    trades_to_fiat = [ Trade(coin, balances[coin] - ideal_value_fiat, fiat)
-                       for coin in coins_to_rebalance if coin != fiat ]
-    fiat_purchases = [ get_purchases (chart_data, trade)
-                       for trade in trades_to_fiat ]
-    est_bals_after_fiat_trades = balances.apply_purchases(None, fiat_purchases)
+    ideal_value_fiat = total_value / len(avail) # TODO maybe +1? like above?
+    purchase_to_fiat = []
+    for coin in coins_to_rebalance:
+        if coin != fiat:
+            purchase_to_fiat.append(
+                get_purchase(
+                    chart_data,
+                    coin,
+                    balances[coin] - ideal_value_fiat,
+                    fiat
+                ))
+
+    est_bals_after_fiat_trades = balances.apply_purchases(None, purchase_to_fiat)
 
     if fiat in coins_to_rebalance:
         fiat_after_trades        = est_bals_after_fiat_trades[fiat]
         to_redistribute          = fiat_after_trades - ideal_value_fiat
-        markets_in_trades        = [fiat + '_' + trade.from_coin for trade in trades_to_fiat]
-        markets_to_buy           = set(avail) - set(markets_in_trades)
+        markets_divested_from    = [fiat + '_' + purchase.from_coin 
+                                    for purchase in purchase_to_fiat]
+        markets_to_buy           = set(avail) - set(markets_divested_from)
         to_redistribute_per_coin = to_redistribute / len(markets_to_buy)
-        trades_from_fiat         = [ Trade(fiat, to_redistribute_per_coin, coin_names(market)[1] )
-                                    for market in markets_to_buy ]
-        return trades_to_fiat + trades_from_fiat
+        purchase_from_fiat       = [get_purchase(chart_data,
+                                                fiat,
+                                                to_redistribute_per_coin,
+                                                coin_names(market)[1])
+                                    for market in avail ]
+        return purchase_to_fiat + purchase_from_fiat
 
-    return trades_to_fiat
+    return purchase_to_fiat
+
 
 '''
 is_buffed tools
@@ -109,13 +120,6 @@ def is_buffed_by_power (coin, coin_values,
         return True
     return False
 
-# def is_buffed_by_percent (coin, coin_values,
-#                           threshold = 0.05):
-#     # TODO: change this to use diff from ideal rather than mean
-#     total_value = sum_of(coin_values)
-#     pct_value = coin_values[coin] / total_value
-#     pct_ideal = (1.0 / len(coin_values.keys()))
-#     return abs(pct_value - pct_ideal) > threshold
 
 '''
 is_crashing tools
