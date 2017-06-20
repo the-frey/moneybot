@@ -23,9 +23,6 @@ lcs = LiveCoinStore(market)
 # see historical poloneix repo for minutes durations
 # trading_frequency_minutes = 5
 
-# market.redistribute_evenly()
-
-# coinstore = CoinStore(client, trading_frequency_minutes)
 current_bals = market.get_balances()
 strat = BuffedCoinStrategy(
   lcs,

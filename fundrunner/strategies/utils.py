@@ -46,6 +46,15 @@ def initial_trades_equal_alloc (chart_data, balances, fiat):
                for market in avail ]
     return trades
 
+def initial_purchases_equal_alloc (chart_data, balances, fiat):
+    avail = available_markets(chart_data)
+    amount_to_invest_per_coin = balances[fiat] / ( len(avail) + 1.0 )
+    trades = [ Trade(fiat, amount_to_invest_per_coin, coin_names(market)[1])
+               for market in avail ]
+    purchases = [ get_purchases (chart_data, trade) for trade in trades ]
+    return purchases
+
+
 '''
 Rebalancing tools
 '''
