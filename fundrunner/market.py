@@ -12,44 +12,6 @@ class PoloniexMarket(Market):
   def __init__(self, pubkey, privkey):
     self.polo = Poloniex(pubkey, privkey)
 
-  def buy_coin(self, coin, amount):
-    market = 'BTC_'+coin
-    lowest_ask   = float(self.polo.returnTicker()[market]['lowestAsk'])
-    # amount       = amount/float(lowest_ask)
-    print("BUY", coin, amount)
-    res = self.polo.buy(market, lowest_ask, amount)
-    sleep(1)
-    _, coin_pairs = self.cancel_open_orders()
-    # if we canceled some order
-    if coin_pairs is not None:
-        for coin_pair in coin_pairs:
-            # Recursively rebuy
-            return self.buy_coin(coin, amount)
-    return
-
-  # String, Float -> None
-  def sell_coin (self, coin, amount):
-      '''
-      Sell some amount of non-BTC `coin` for BTC.
-      Will retry until it sucessfuly executes the trade at the best price.
-      '''
-      # Place an order
-      market = 'BTC_'+coin
-      highest_bid = float(self.polo.returnTicker()[market]['highestBid'])
-      # logging.info('Placing order to sell %s %s at %s BTC',
-            # amount, coin, highest_bid)
-      print("SELL", coin, amount)
-      res = self.polo.sell(market, highest_bid, amount)
-      # Wait, then see if any orders still open
-      sleep(1)
-      _, coin_pairs = self.cancel_open_orders()
-      # if we canceled some order
-      if coin_pairs is not None:
-          for coin_pair in coin_pairs:
-              # Recursively rebuy
-              return self.sell_coin(coin, amount)
-      return
-
   def make_purchase(self, purchase, fiat='BTC'):
     """ Performs a purchase on the market given a source coin, destination coin,
         and amount in each.  Returns the real purchase amount, which may not be
@@ -105,39 +67,3 @@ class PoloniexMarket(Market):
       latest_charts[market] = self.polo.returnChartData(market, period)[-1]
       latest_charts[market]['average'] = float(latest_charts[market]['weightedAverage'])
     return latest_charts
-
-  # Needs a sanity check....
-  def redistribute_evenly (self):
-    markets = self.get_btc_markets()
-    bals = self.get_balances()
-    sum_total = pd.Series(bals).sum()
-    inv_per_coin = sum_total / len(markets)
-    ticker = self.polo.returnTicker()
-    to_sell = {}
-    to_buy = {}
-    for coin, btcValue, in bals.items():
-      if btcValue > 0:
-        if btcValue > inv_per_coin:
-          if coin != 'BTC':
-            btc_amount = btcValue - inv_per_coin
-            lowestAsk = float(ticker['BTC_' + coin]['lowestAsk'])
-            coinToSell = btc_amount / lowestAsk
-            if btc_amount > 0.0001:
-              to_sell[coin] = coinToSell
-        else:
-          if coin != 'BTC':
-            btc_amount = inv_per_coin - btcValue
-            lowestAsk = float(ticker['BTC_' + coin]['lowestAsk'])
-            coinToBuy = btc_amount / lowestAsk
-            if btc_amount > 0.0001:
-              to_buy[coin] = coinToBuy
-    # Sell coins
-    for coin, amount, in to_sell.items():
-      self.sell_coin(coin, amount)
-    # Buy coins
-    for coin, amount, in to_buy.items():
-      self.buy_coin(coin, amount)
-
-
-
-
