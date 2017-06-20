@@ -20,7 +20,6 @@ class Strategy (object):
         charts        = self.coinstore.latest_candlesticks(time)
         trades        = self.get_trades(charts, self.balances)
         purchases     = [get_purchases(charts, trade) for trade in trades]
-        print(purchases)
         if self.market:
             results   = [self.market.make_purchase(purchase) for purchase in purchases]
         self.balances = self.balances.apply_purchases(time, purchases)

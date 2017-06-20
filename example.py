@@ -16,10 +16,7 @@ client = InfluxDBClient(config['db']['hostname'],
                         config['db']['password'],
                         config['db']['database'])
 
-# see historical poloneix repo for minutes durations
-trading_frequency_minutes = 1440
-
-coinstore = HistoricalCoinStore(client, trading_frequency_minutes)
+coinstore = HistoricalCoinStore(client)
 
 # Try BuyHoldStrategy or BuffedCoinStrategy too
 strat = PeakRiderStrategy(
@@ -27,9 +24,8 @@ strat = PeakRiderStrategy(
     {'BTC': 1},)
 
 summary = evaluate(strat,
-                   '2017-01-01', '2017-05-26',
-                   duration_days=30,
-                   verbose=True, window_distance_days=30,
-                   trading_frequency_minutes=trading_frequency_minutes)
+                   '2017-06-01', '2017-06-19',
+                   duration_days=18,
+                   window_distance_days=30)
 
 print(summary)

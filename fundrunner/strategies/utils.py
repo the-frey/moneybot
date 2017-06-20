@@ -11,12 +11,12 @@ def coin_names (market_name):
     coins = market_name.split('_')
     return coins[0], coins[1]
 
-def available_markets (chart_data):
-    return set(chart_data.keys())
+def available_markets (chart_data, fiat):
+    return set([ k for k in chart_data.keys() if k.startswith(fiat) ])
 
 def held_coins_with_chart_data (chart_data, balances,
                                 fiat='BTC'):
-    avail_markets = available_markets(chart_data)
+    avail_markets = available_markets(chart_data, fiat)
     # Extract the coin name from each available fiat-to-coin market
     avail_coins   = [coin_names(market)[1] for market in avail_markets]
     # The fiat is always available, so we'll add that to the list as well
@@ -24,7 +24,7 @@ def held_coins_with_chart_data (chart_data, balances,
     return set(balances.held_coins()).intersection(avail_coins)
 
 def get_purchases (current_chart_data, trade,
-                   fee=0.0025, fiat='BTC', price_key='average'):
+                   fee=0.0025, fiat='BTC', price_key='weightedAverage'):
     if trade.to_coin == fiat:
         market_name = '{!s}_{!s}'.format(fiat, trade.from_coin)
         to_price = 1 / current_chart_data[market_name][price_key]
@@ -40,17 +40,14 @@ Initial allocation tools
 '''
 
 def initial_trades_equal_alloc (chart_data, balances, fiat):
-    avail = available_markets(chart_data)
+    avail = available_markets(chart_data, fiat)
     amount_to_invest_per_coin = balances[fiat] / ( len(avail) + 1.0 )
     trades = [ Trade(fiat, amount_to_invest_per_coin, coin_names(market)[1])
                for market in avail ]
     return trades
 
 def initial_purchases_equal_alloc (chart_data, balances, fiat):
-    avail = available_markets(chart_data)
-    amount_to_invest_per_coin = balances[fiat] / ( len(avail) + 1.0 )
-    trades = [ Trade(fiat, amount_to_invest_per_coin, coin_names(market)[1])
-               for market in avail ]
+    trades = initial_trades_equal_alloc(chart_data, balances, fiat)
     purchases = [ get_purchases (chart_data, trade) for trade in trades ]
     return purchases
 
@@ -60,7 +57,7 @@ Rebalancing tools
 '''
 
 def rebalancing_trades_equal_alloc (coins_to_rebalance, chart_data, balances, fiat):
-    avail = available_markets(chart_data)
+    avail = available_markets(chart_data, fiat)
     total_value = balances.estimate_total_fiat_value(chart_data)
     ideal_value_fiat = total_value / len(avail)
     # Note: Below estimates the trades, might not reflect real trades/purchases.
@@ -124,7 +121,7 @@ def is_buffed_by_power (coin, coin_values,
 is_crashing tools
 '''
 # PandasSeries -> (PandasSeries, PandasSeries)
-def emas (price_series, shortw=2, longw=25, **kwargs):
+def emas (price_series, shortw=96, longw=2400, **kwargs):
     long_ema  = price_series.ewm(com=longw).mean()
     short_ema = price_series.ewm(com=shortw).mean()
     return long_ema, short_ema

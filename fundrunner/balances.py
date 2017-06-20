@@ -22,7 +22,7 @@ class Balances(object):
             new_balances[to_coin] += to_amount
         return Balances(time, new_balances)
 
-    def estimate_values (self, charts, key='average'):
+    def estimate_values (self, charts, key='weightedAverage'):
         values = {}
         remove = []
         for coin, amount_held in self.balances.items():

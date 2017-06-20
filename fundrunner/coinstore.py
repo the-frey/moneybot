@@ -2,22 +2,21 @@ import pandas as pd
 import requests
 
 class HistoricalCoinStore(object):
-    def __init__(self, influx_client, minutes_candlestick_duration):
+    def __init__(self, influx_client):
 
-        self.minutes = minutes_candlestick_duration
         self.client = influx_client
 
-    # String -> { 'BTC_ETH': { open, high, low, close, average } ... }
+    # String -> { 'BTC_ETH': { weightedAverage, ...} ...}
+    # see https://bitbucket.org/peakrider/poloniex-chart-history
     def latest_candlesticks (self, time):
         q ='''
-        select * from candlestick
-        where minutes = '{!s}'
-        and time <= '{!s}' and time > '{!s}' - 1d
+        select * from scrapedChart
+        where time <= '{!s}' and time > '{!s}' - 1d
         and currencyPair != 'USD_BTC'
         group by currencyPair
         order by time desc
         limit 1
-        '''.format(self.minutes, time, time)
+        '''.format(time, time)
         result_set = self.client.query(q)
         coin_generator_tuples = { r[0][1]['currencyPair']: list(r[1])[0]
                                  for r in result_set.items() }
@@ -25,28 +24,26 @@ class HistoricalCoinStore(object):
 
     # String -> Float
     def btc_price (self, time,
-                   key='average'):
+                   key='weightedAverage'):
         q ='''
-        select * from candlestick
-        where minutes = '{!s}'
-        and time <= '{!s}' and time > '{!s}' - 30d
+        select * from scrapedChart
+        where time <= '{!s}' and time > '{!s}' - 30d
         and currencyPair = 'USD_BTC'
         order by time desc
         limit 1
-        '''.format(self.minutes, time, time)
+        '''.format(time, time)
         result_set = self.client.query(q)
         return list(result_set.get_points())[-1][key]
 
     # String, String -> [ Float... ]
     def market_history (self, currency_pair, time,
-                            days_back=30, key='average'):
+                            days_back=30, key='weightedAverage'):
         q ='''
-        select * from candlestick
+        select * from scrapedChart
         where currencyPair='{!s}'
-        and minutes='{!s}'
         and time <= '{!s}' and time > '{!s}' - {!s}d
         order by time desc
-        '''.format(currency_pair, self.minutes, time, time, days_back)
+        '''.format(currency_pair, time, time, days_back)
         result_set = self.client.query(q)
         prices     = [(p['time'], p[key]) for p in result_set.get_points()]
         df = pd.Series([p[1] for p in prices])
@@ -57,7 +54,7 @@ class LiveCoinStore(object):
     def __init__(self, market):
         self.market = market
 
-    def latest_candlesticks (self, time=''):
+    def latest_candlesticks(self, time=''):
         return self.market.latest_chart_data()
 
     def btc_price (self, time=''):
