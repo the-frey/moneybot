@@ -15,7 +15,7 @@ def find_buffed_coins (chart_data, balances):
 class PeakRiderStrategy (Strategy):
 
   def is_crashing (self, coin, time,
-                   threshold=-0.15):
+                   threshold=-0.00):
       if coin == self.fiat:
           currency_pair = 'USD_' + self.fiat
       else:
