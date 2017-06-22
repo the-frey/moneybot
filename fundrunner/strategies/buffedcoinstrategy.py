@@ -6,7 +6,6 @@ from .utils import is_buffed
 def find_buffed_coins (chart_data, balances):
     # if we hold other stuff,
     est_values = balances.estimate_values(chart_data)
-    print(est_values)
     buffed_coins = [
       coin for coin in held_coins_with_chart_data(chart_data, balances)
       if is_buffed(coin, est_values, multiplier=1.5)
@@ -25,7 +24,6 @@ class BuffedCoinStrategy (Strategy):
     # If we do have stuff other than fiat,
     # see if any of those holdings are buffed
     buffed_coins = find_buffed_coins(current_chart_data, current_balances)
-    print("BUFFED COINS: ", buffed_coins)
     # if any of them are,
     if len(buffed_coins):
         # sell them so as to reallocate their value eqaully
