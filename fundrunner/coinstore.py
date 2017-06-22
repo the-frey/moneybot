@@ -8,6 +8,12 @@ class HistoricalCoinStore(object):
 
     # String -> { 'BTC_ETH': { weightedAverage, ...} ...}
     # see https://bitbucket.org/peakrider/poloniex-chart-history
+    # TODO One issue here is that we are *only* getting the latest (15-minute) candlestic
+    # So, if we are only trading once per day, certain values (like volume) will be misleading,
+    # as they won't cover teh whole 24-hour period.
+    # We could, in the future, address this by taking all the candlesticks since we last checked
+    # and pass them through to the strategy together, sorted ny time.
+    # Then, the strategy can then decide how to combine them.
     def latest_candlesticks (self, time):
         q ='''
         select * from scrapedChart

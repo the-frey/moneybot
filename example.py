@@ -24,8 +24,9 @@ strat = PeakRiderStrategy(
     {'BTC': 1},)
 
 summary = evaluate(strat,
-                   '2017-06-01', '2017-06-19',
-                   duration_days=18,
-                   window_distance_days=30)
+                   '2017-01-01', '2017-06-19',
+                   duration_days=30,
+                   window_distance_days=14,
+                   trading_duration_seconds=43200)
 
 print(summary)
