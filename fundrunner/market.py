@@ -12,10 +12,15 @@ class PoloniexMarket(Market):
   def __init__(self, pubkey, privkey):
     self.polo = Poloniex(pubkey, privkey)
 
+    # TODO does this really return a purchase? I don't think so....
+    # TODO helper method recursively buys, use immediateOrCancel
   def make_purchase(self, purchase, fiat='BTC'):
     """ Performs a purchase on the market given a source coin, destination coin,
         and amount in each.  Returns the real purchase amount, which may not be
         exactly the same as the requested purchase amount.
+
+        If no purchase can be made (e.g. purchase too small), returns None.
+
         function(Purchase) -> Purchase
     """
     if purchase.from_coin == fiat:
@@ -32,6 +37,7 @@ class PoloniexMarket(Market):
       # market, (FIAT / OTHER), OTHER
       if purchase.to_amount > 0.0001:
         return self.polo.sell(market, rate, purchase.from_amount)
+      return None
 
   def open_orders(self):
     open_orders = self.polo.returnOpenOrders()

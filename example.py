@@ -23,10 +23,12 @@ strat = PeakRiderStrategy(
     coinstore,
     {'BTC': 1},)
 
+day_in_secs = 86400
 summary = evaluate(strat,
                    '2017-01-01', '2017-06-19',
                    duration_days=30,
                    window_distance_days=14,
-                   trading_duration_seconds=43200)
+                   trading_duration_seconds=day_in_secs)
+                   # trading_duration_seconds=day_in_secs//8)
 
 print(summary)

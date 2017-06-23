@@ -14,15 +14,14 @@ def find_buffed_coins (chart_data, balances):
 
 class PeakRiderStrategy (Strategy):
 
-  def is_crashing (self, coin, time,
-                   threshold=-0.00):
+  def is_crashing (self, coin, time):
       if coin == self.fiat:
           currency_pair = 'USD_' + self.fiat
       else:
           currency_pair = '{!s}_{!s}'.format(self.fiat, coin)
       prices = self.coinstore.market_history(currency_pair, time)
       latest = latest_ppo_hist(prices)
-      if latest > threshold:
+      if latest > 0:
           return True
       return False
 

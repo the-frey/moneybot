@@ -43,7 +43,7 @@ class HistoricalCoinStore(object):
 
     # String, String -> [ Float... ]
     def market_history (self, currency_pair, time,
-                            days_back=30, key='weightedAverage'):
+                            days_back=30, key='price_usd'):
         q ='''
         select * from scrapedChart
         where currencyPair='{!s}'
