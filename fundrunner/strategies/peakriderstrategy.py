@@ -1,5 +1,5 @@
 from .strategy import Strategy
-from .utils import initial_trades_equal_alloc, rebalancing_trades_equal_alloc, held_coins_with_chart_data
+from .utils import initial_purchases_equal_alloc, rebalancing_purchases_equal_alloc, held_coins_with_chart_data
 from .utils import is_buffed, is_buffed_by_power, latest_ppo_hist
 
 def find_buffed_coins (chart_data, balances):
@@ -26,11 +26,12 @@ class PeakRiderStrategy (Strategy):
           return True
       return False
 
-  def get_trades (self, current_chart_data, current_balances):
+
+  def get_purchases (self, current_chart_data, current_balances, fiat='BTC'):
     # First of all, if we only hold fiat,
     if current_balances.held_coins() == [self.fiat]:
         # Make initial trades
-        return initial_trades_equal_alloc(current_chart_data, current_balances, self.fiat)
+        return initial_purchases_equal_alloc(current_chart_data, current_balances, fiat)
     # If we do have stuff other than fiat,
     # see if any of those holdings are buffed
     buffed_coins = find_buffed_coins(current_chart_data, current_balances)
@@ -39,6 +40,6 @@ class PeakRiderStrategy (Strategy):
     # if any of them are,
     if len(buffed_and_crashing):
         # sell them so as to reallocate their value eqaully
-        return rebalancing_trades_equal_alloc(buffed_and_crashing, current_chart_data,
-                                              current_balances, self.fiat)
+        return rebalancing_purchases_equal_alloc(buffed_and_crashing, current_chart_data,
+                                              current_balances, fiat)
     return []

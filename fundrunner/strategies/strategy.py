@@ -1,6 +1,5 @@
 from .. import Purchase
 from ..balances import Balances
-from .utils import get_purchases
 
 class Strategy (object):
     def __init__ (self, coinstore, initial_balances,
@@ -18,8 +17,7 @@ class Strategy (object):
 
     def step (self, time):
         charts        = self.coinstore.latest_candlesticks(time)
-        trades        = self.get_trades(charts, self.balances)
-        purchases     = [get_purchases(charts, trade) for trade in trades]
+        purchases     = self.get_purchases(charts, self.balances)
         if self.market:
             results   = [self.market.make_purchase(purchase) for purchase in purchases]
         self.balances = self.balances.apply_purchases(time, purchases)

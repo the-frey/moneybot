@@ -31,7 +31,7 @@ class Balances(object):
                     values[coin] = amount_held
                 else:
                     relevant_market = '{!s}_{!s}'.format(self.fiat, coin)
-                    values[coin] = charts[relevant_market][key] * amount_held
+                    values[coin] = float(charts[relevant_market][key]) * amount_held
             except KeyError:
                 # Remove the coin -- it has been delisted.
                 remove.append(coin)
