@@ -53,8 +53,3 @@ class Balances(object):
     def estimate_total_fiat_value (self, charts):
         vs = self.estimate_values(charts)
         return sum(vs.values())
-
-    # Balances.from_poloniex(poloniex_client)
-    def from_poloniex(poloniex_client):
-        # to implement
-        pass

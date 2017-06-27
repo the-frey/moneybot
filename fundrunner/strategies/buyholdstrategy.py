@@ -1,4 +1,4 @@
-from .strategy import Strategy
+from ..strategy import Strategy
 from .utils import initial_purchases_equal_alloc
 
 class BuyHoldStrategy(Strategy):
