@@ -15,5 +15,5 @@
     }
   },
 
-  "period": 900
+  "trade_interval": 86400
 }

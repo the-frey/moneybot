@@ -99,7 +99,7 @@ def rebalancing_purchases_equal_alloc (coins_to_rebalance, chart_data, balances,
             purchases_to_fiat.append(purchase)
     purchases_to_fiat = filter_none(purchases_to_fiat)
 
-    est_bals_after_fiat_trades = balances.apply_purchases(None, purchases_to_fiat)
+    est_bals_after_fiat_trades = balances.apply_purchases(purchases_to_fiat)
 
     if fiat in coins_to_rebalance and len(purchases_to_fiat) > 0:
         fiat_after_trades        = est_bals_after_fiat_trades[fiat]
