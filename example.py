@@ -7,7 +7,7 @@ from fundrunner.strategies.peakriderstrategy import PeakRiderStrategy
 
 from fundrunner.evaluate import evaluate
 
-with open('config.backtest.json') as cfg_file:
+with open('config.json.example') as cfg_file:
 	config = json.load(cfg_file)
 
 # Try BuyHoldStrategy or BuffedCoinStrategy too

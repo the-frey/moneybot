@@ -4,7 +4,7 @@ from fundrunner.strategies.buffedcoinstrategy import BuffedCoinStrategy
 from fundrunner.strategies.peakriderstrategy import PeakRiderStrategy
 import pandas as pd
 
-with open('config.backtest.json') as cfg_file:
+with open('config.json.example') as cfg_file:
 	config = json.load(cfg_file)
 
 # The start and end of our test period
