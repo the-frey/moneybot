@@ -32,6 +32,7 @@ def evaluate (strategy, start_date, end_date,
                               freq='{!s}s'.format(trading_duration_seconds))
         strat_dates_tuples.append((strategy, dates))
 
+    # return backtest(strat_dates_tuples[0])
     with Pool(num_threads) as p:
         return summary(
             p.map(backtest, strat_dates_tuples),

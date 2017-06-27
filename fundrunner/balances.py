@@ -1,3 +1,6 @@
+def filter_none (lst):
+    return [x for x in lst if x != None]
+
 class Balances(object):
     # balances = { 'COIN': coin_amt }
     def __init__(self, time, balances, fiat='BTC'):
@@ -15,29 +18,37 @@ class Balances(object):
     # self, Purchase -> Balance
     def apply_purchases (self, time, purchases):
         new_balances = self.balances.copy()
-        for from_coin, from_amount, to_coin, to_amount in purchases:
-            new_balances[from_coin] -= from_amount
-            if to_coin not in new_balances:
-                new_balances[to_coin] = 0
-            new_balances[to_coin] += to_amount
+        purchases = filter_none(purchases)
+        if len(purchases) != 0:
+            for from_coin, from_amount, to_coin, to_amount in purchases:
+                new_balances[from_coin] -= from_amount
+                if to_coin not in new_balances:
+                    new_balances[to_coin] = 0
+                new_balances[to_coin] += to_amount
         return Balances(time, new_balances)
 
+    # self, charts -> Dict
     def estimate_values (self, charts, key='weightedAverage'):
-        values = {}
+        '''
+        Returns a dict where keys are coin names,
+        and values are the value of our holdings in fiat.
+        '''
+        fiat_values = {}
         remove = []
         for coin, amount_held in self.balances.items():
             try:
                 if coin == self.fiat:
-                    values[coin] = amount_held
+                    fiat_values[coin] = amount_held
                 else:
                     relevant_market = '{!s}_{!s}'.format(self.fiat, coin)
-                    values[coin] = float(charts[relevant_market][key]) * amount_held
+                    fiat_price = float(charts[relevant_market][key])
+                    fiat_values[coin] =  fiat_price * amount_held
             except KeyError:
                 # Remove the coin -- it has been delisted.
                 remove.append(coin)
         for removal in remove:
             self.balances.pop(removal)
-        return values
+        return fiat_values
 
     def estimate_total_fiat_value (self, charts):
         vs = self.estimate_values(charts)
