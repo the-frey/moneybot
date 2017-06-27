@@ -53,6 +53,10 @@ def get_purchase (current_chart_data, from_coin, from_amount, to_coin,
         to_price = current_chart_data[market_name][price_key]
         to_amount = purchase_amount(from_amount, to_price)
         return Purchase(from_coin, from_amount, to_coin, to_amount)
+    # If none of these conditions are met,
+    # we return None.
+    # None values are explicitly filtered at the ends of the system,
+    # e.g. in balances.apply_purchases() or market.make_purchase()
     return None
 
 
