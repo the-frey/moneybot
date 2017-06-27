@@ -1,8 +1,9 @@
 import pandas as pd
 from influxdb import InfluxDBClient
-from fundrunner.coinstore import HistoricalCoinStore
+from fundrunner.coinstore import HistoricalCoinStore, LiveCoinStore
 from . import Purchase
 from .balances import Balances
+from .market import PoloniexMarket
 from datetime import datetime
 from time import sleep
 
@@ -32,13 +33,13 @@ class Strategy (object):
     def run_live (self):
         self.market = PoloniexMarket(self.config['livetrading']['poloniex']['pk'],
                                      self.config['livetrading']['poloniex']['sk'])
-        self.coinstore = LiveCoinStore(client, market)
-        initial_balances = market.get_balances()
+        self.coinstore = LiveCoinStore(self.client, self.market)
+        initial_balances = self.market.get_balances()
         self.balances = Balances(initial_balances)
         while True:
             cur_time = datetime.now()
             print('Trading', cur_time)
-            usd_val = strat.step(cur_time)
+            usd_val = self.step(cur_time)
             print('Est. USD value', usd_val)
             # TODO Count the time that the step took to run
             #      see poloniex-index-fund-bot for how this is done
