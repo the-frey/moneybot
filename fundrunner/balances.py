@@ -3,9 +3,8 @@ def filter_none (lst):
 
 class Balances(object):
     # balances = { 'COIN': coin_amt }
-    def __init__(self, time, balances, fiat='BTC'):
+    def __init__(self, balances, fiat='BTC'):
         self.balances = balances
-        self.time     = time
         self.fiat     = fiat
 
     def __getitem__ (self, key):
@@ -16,7 +15,7 @@ class Balances(object):
                 if self.balances[k] > 0 ]
 
     # self, Purchase -> Balance
-    def apply_purchases (self, time, purchases):
+    def apply_purchases (self, purchases):
         new_balances = self.balances.copy()
         purchases = filter_none(purchases)
         if len(purchases) > 0:
@@ -25,7 +24,7 @@ class Balances(object):
                 if to_coin not in new_balances:
                     new_balances[to_coin] = 0
                 new_balances[to_coin] += to_amount
-        return Balances(time, new_balances)
+        return Balances(new_balances)
 
     # self, charts -> Dict
     def estimate_values (self, charts, key='weightedAverage'):
@@ -53,8 +52,3 @@ class Balances(object):
     def estimate_total_fiat_value (self, charts):
         vs = self.estimate_values(charts)
         return sum(vs.values())
-
-    # Balances.from_poloniex(poloniex_client)
-    def from_poloniex(poloniex_client):
-        # to implement
-        pass

@@ -1,4 +1,4 @@
-from .strategy import Strategy
+from ..strategy import Strategy
 import numpy as np
 from .utils import initial_purchases_equal_alloc, rebalancing_purchases_equal_alloc, held_coins_with_chart_data
 from .utils import is_buffed

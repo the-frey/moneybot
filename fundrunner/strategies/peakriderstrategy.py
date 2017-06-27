@@ -1,4 +1,4 @@
-from .strategy import Strategy
+from ..strategy import Strategy
 from .utils import initial_purchases_equal_alloc, rebalancing_purchases_equal_alloc, held_coins_with_chart_data
 from .utils import is_buffed, is_buffed_by_power, latest_ppo_hist
 
