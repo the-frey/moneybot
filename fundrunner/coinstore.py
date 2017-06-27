@@ -56,9 +56,10 @@ class HistoricalCoinStore(object):
         df.index = [p[0] for p in prices]
         return df
 
-class LiveCoinStore(object):
-    def __init__(self, market):
+class LiveCoinStore(HistoricalCoinStore):
+    def __init__(self, influx_client, market):
         self.market = market
+        self.client = influx_client
 
     def latest_candlesticks(self, time=''):
         return self.market.latest_chart_data()

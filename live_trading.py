@@ -7,6 +7,7 @@ from fundrunner.strategies.buffedcoinstrategy import BuffedCoinStrategy
 from fundrunner import Purchase
 from datetime import datetime
 import pandas as pd
+from time import sleep
 
 with open('config.json') as cfg_file:
 	config = json.load(cfg_file)
@@ -19,7 +20,7 @@ client = InfluxDBClient(config['db']['hostname'],
 
 market = PoloniexMarket(config['poloniex']['pk'], config['poloniex']['sk'])
 
-lcs = LiveCoinStore(market)
+lcs = LiveCoinStore(client, market)
 # see historical poloneix repo for minutes durations
 # trading_frequency_minutes = 5
 
@@ -31,4 +32,6 @@ strat = BuffedCoinStrategy(
 
 strat.set_market(market)
 strat.balances = Balances(pd.Timestamp(datetime.now()), current_bals)
-print(strat.step(pd.Timestamp(datetime.now())))
+while True:
+	print(strat.step(pd.Timestamp(datetime.now())))
+	sleep(300)
