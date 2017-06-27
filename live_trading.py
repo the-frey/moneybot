@@ -32,6 +32,7 @@ strat = BuffedCoinStrategy(
 
 strat.set_market(market)
 strat.balances = Balances(pd.Timestamp(datetime.now()), current_bals)
+interval = config['period'] or 300
 while True:
 	print(strat.step(pd.Timestamp(datetime.now())))
-	sleep(300)
+	sleep(interval)
