@@ -87,12 +87,14 @@ def rebalancing_purchases_equal_alloc (coins_to_rebalance, chart_data, balances,
     purchases_to_fiat = []
     for coin in coins_to_rebalance:
         if coin != fiat:
-            coin_value_fiat = (balances[coin] *
-                               float(chart_data[fiat + '_' + coin]['weightedAverage']))
+            coin_price_fiat = float(chart_data[fiat + '_' + coin]['weightedAverage'])
+            holding_value_fiat = (balances[coin] * coin_price_fiat)
+            value_to_offload_fiat = holding_value_fiat - ideal_value_fiat
+            amount_to_sell = value_to_offload_fiat / coin_price_fiat
             purchase = get_purchase(
                 chart_data,
                 coin,
-                coin_value_fiat - ideal_value_fiat,
+                amount_to_sell,
                 fiat, )
             purchases_to_fiat.append(purchase)
     purchases_to_fiat = filter_none(purchases_to_fiat)
