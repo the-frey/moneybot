@@ -1,3 +1,6 @@
+def filter_none (lst):
+    return [x for x in lst if x != None]
+
 class Balances(object):
     # balances = { 'COIN': coin_amt }
     def __init__(self, time, balances, fiat='BTC'):
@@ -15,11 +18,13 @@ class Balances(object):
     # self, Purchase -> Balance
     def apply_purchases (self, time, purchases):
         new_balances = self.balances.copy()
-        for from_coin, from_amount, to_coin, to_amount in purchases:
-            new_balances[from_coin] -= from_amount
-            if to_coin not in new_balances:
-                new_balances[to_coin] = 0
-            new_balances[to_coin] += to_amount
+        purchases = filter_none(purchases)
+        if len(purchases) > 0:
+            for from_coin, from_amount, to_coin, to_amount in purchases:
+                new_balances[from_coin] -= from_amount
+                if to_coin not in new_balances:
+                    new_balances[to_coin] = 0
+                new_balances[to_coin] += to_amount
         return Balances(time, new_balances)
 
     # self, charts -> Dict
