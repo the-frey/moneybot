@@ -23,21 +23,20 @@ class PoloniexMarket(Market):
 
         function(Purchase) -> Purchase
     """
+    if not purchase:
+      return None
     if purchase.from_coin == fiat:
       market = fiat + "_" + purchase.to_coin
       rate = purchase.from_amount / purchase.to_amount
       print("BUY", market, purchase.to_amount)
       # market, (FIAT / OTHER), OTHER
-      if purchase.from_amount > 0.0001:
-        res = self.polo.buy(market, rate, purchase.to_amount)
+      return self.polo.buy(market, rate, purchase.to_amount)
     elif purchase.to_coin == fiat:
       market = fiat + "_" + purchase.from_coin
       rate = purchase.to_amount / purchase.from_amount
       print("SELL", market, purchase.to_amount)
       # market, (FIAT / OTHER), OTHER
-      if purchase.to_amount > 0.0001:
-        return self.polo.sell(market, rate, purchase.from_amount)
-      return None
+      return self.polo.sell(market, rate, purchase.from_amount)
 
   def open_orders(self):
     open_orders = self.polo.returnOpenOrders()
@@ -58,8 +57,9 @@ class PoloniexMarket(Market):
     bals = self.polo.returnCompleteBalances()
     all_balances = {}
     for coin, bal, in bals.items():
-      if float(bal['btcValue']) > 0:
-        all_balances[coin] = float(bal['btcValue'])
+      avail = float(bal['available'])
+      if  avail > 0:
+        all_balances[coin] = avail
     return all_balances
 
   def get_btc_markets(self):

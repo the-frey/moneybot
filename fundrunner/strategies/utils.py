@@ -42,7 +42,7 @@ def get_purchase (current_chart_data, from_coin, from_amount, to_coin,
     # if the coin is fiat,
     if to_coin == fiat:
         market_name = '{!s}_{!s}'.format(fiat, from_coin)
-        to_price = 1 / current_chart_data[market_name][price_key]
+        to_price = 1 / float(current_chart_data[market_name][price_key])
         to_amount = purchase_amount(from_amount, to_price)
         if to_amount > min_fiat_value_for_trade:
             return Purchase(from_coin, from_amount, to_coin, to_amount)
@@ -50,7 +50,7 @@ def get_purchase (current_chart_data, from_coin, from_amount, to_coin,
     # and we're buying more than 0.0001 BTC worth,
     elif to_coin != fiat and from_amount > min_fiat_value_for_trade:
         market_name = '{!s}_{!s}'.format(fiat, to_coin)
-        to_price = current_chart_data[market_name][price_key]
+        to_price = float(current_chart_data[market_name][price_key])
         to_amount = purchase_amount(from_amount, to_price)
         return Purchase(from_coin, from_amount, to_coin, to_amount)
     # If none of these conditions are met,
@@ -87,13 +87,14 @@ def rebalancing_purchases_equal_alloc (coins_to_rebalance, chart_data, balances,
     purchases_to_fiat = []
     for coin in coins_to_rebalance:
         if coin != fiat:
-            purchases_to_fiat.append(
-                get_purchase(
-                    chart_data,
-                    coin,
-                    balances[coin] - ideal_value_fiat,
-                    fiat
-                ))
+            coin_value_fiat = (balances[coin] *
+                               float(chart_data[fiat + '_' + coin]['weightedAverage']))
+            purchase = get_purchase(
+                chart_data,
+                coin,
+                coin_value_fiat - ideal_value_fiat,
+                fiat, )
+            purchases_to_fiat.append(purchase)
     purchases_to_fiat = filter_none(purchases_to_fiat)
 
     est_bals_after_fiat_trades = balances.apply_purchases(None, purchases_to_fiat)
