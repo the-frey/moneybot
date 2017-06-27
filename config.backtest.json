@@ -9,9 +9,15 @@
   },
 
   "backtesting": {
-    "should_backtest": true,
     "initial_balances": {
       "BTC": 1
+    }
+  },
+
+  "livetrading": {
+    "poloniex": {
+      "pk": "YOUR_API_KEY",
+      "sk": "YOUR_API_SECRET"
     }
   },
 

@@ -3,40 +3,46 @@ from influxdb import InfluxDBClient
 from fundrunner.coinstore import HistoricalCoinStore
 from . import Purchase
 from .balances import Balances
+from datetime import datetime
+from time import sleep
 
 class Strategy (object):
-    def __init__ (self, config, 
+    def __init__ (self, config,
                   market=None, fiat='BTC'):
+
+        self.config = config
+
+        self.trade_interval = config['trade_interval']
 
         self.fiat = fiat
 
         # Interval between trades, in seconds
-        self.trade_interval = config['trade_interval'] 
+        self.trade_interval = config['trade_interval']
 
         # Set up the InfluxDB with historical chart data
-        client = InfluxDBClient(config['db']['hostname'],
-                                config['db']['port'],
-                                config['db']['username'],
-                                config['db']['password'],
-                                config['db']['database'])
+        self.client = InfluxDBClient(config['db']['hostname'],
+                                     config['db']['port'],
+                                     config['db']['username'],
+                                     config['db']['password'],
+                                     config['db']['database'])
 
-        # If we're backtesting,
-        if config['backtesting']['should_backtest']:
-            # Set up the historical coinstore
-            self.coinstore = HistoricalCoinStore(client)
-            # And get our initial balances
-            initial_balances = config['backtesting']['initial_balances']
-            self.balances = Balances(initial_balances)
+        # This is none until initialize (until run_live() is called)
+        self.market = None
 
-        elif config['live_trading']['should_livetrade']:
-            self.market = PoloniexMarket(config['poloniex']['pk'],
-                                         config['poloniex']['sk'])
-            self.coinstore = LiveCoinStore(client, market)
-            initial_balances = market.get_balances()
-            self.balances = Balances(initial_balances)
-
-        # TODO What is a market? why is it often None?
-        self.market = market
+    def run_live (self):
+        self.market = PoloniexMarket(self.config['livetrading']['poloniex']['pk'],
+                                     self.config['livetrading']['poloniex']['sk'])
+        self.coinstore = LiveCoinStore(client, market)
+        initial_balances = market.get_balances()
+        self.balances = Balances(initial_balances)
+        while True:
+            cur_time = datetime.now()
+            print('Trading', cur_time)
+            usd_val = strat.step(cur_time)
+            print('Est. USD value', usd_val)
+            # TODO Count the time that the step took to run
+            #      see poloniex-index-fund-bot for how this is done
+            sleep(self.trade_interval)
 
     # self, str, str => List<Float>
     def begin_backtest (self, start_time, end_time):
@@ -46,6 +52,11 @@ class Strategy (object):
         Returns a list of USD values for each point (trade interval)
         between start and end.
         '''
+        # Set up the historical coinstore
+        self.coinstore = HistoricalCoinStore(self.client)
+        # And get our initial balances
+        initial_balances = self.config['backtesting']['initial_balances']
+        self.balances = Balances(initial_balances)
         # A series of trade-times to run each of our strategies through.
         dates = pd.date_range(pd.Timestamp(start_time),
                               pd.Timestamp(end_time),
@@ -65,6 +76,3 @@ class Strategy (object):
         usd_btc_price = self.coinstore.btc_price(time)
         usd_value     = btc_value * usd_btc_price
         return round(usd_value, 2)
-
-    # def get_trades (self, current_chart_data, current_balances, fiat='BTC'):
-    #     raise NotImplementedError
