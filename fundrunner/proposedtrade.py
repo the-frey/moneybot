@@ -59,3 +59,11 @@ class ProposedTrade (object):
         self.bid_amount = amount
         self.ask_amount = self._purchase_amount(amount, self.price)
         return self
+
+    def __str__ (self):
+        return '{!s} {!s} for {!s} {!s} (price of {!s} {!s}/{!s} on market {!s})'.format(
+            self.bid_amount, self.from_coin,
+            self.ask_amount, self.to_coin,
+            self.price, self.from_coin, self.to_coin,
+            self.market_name,
+            )

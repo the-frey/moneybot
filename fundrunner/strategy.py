@@ -68,11 +68,15 @@ class Strategy (object):
 
     def step (self, time):
         # Get the latest chart data from the market
-        charts          = self.MarketAdapter.latest_chart_data(time)
+        charts = self.MarketAdapter.latest_chart_data(time)
         # Now, propose trades. If you're writing a strategy, you will override this method.
-        # TODO self.balances is coming out of nowhere. 
+        # TODO self.balances is coming out of nowhere.
         #      Can't it get passed into `step()`?
         proposed_trades = self.propose_trades(charts, self.balances, time)
+        # The user's propose_trades() method could be returning anything,
+        # we don't trust it necessarily. So, we have our MarketAdapter
+        # assure that all the trades are legal, by the market's rules.
+        legal_trades = self.MarketAdapter.filter_legal(proposed_trades, charts)
         # Finally, the MarketAdapter will execute our trades.
         # If we're backtesting, these trades won't really happen.
         # If we're trading for real, we will attempt to execute the proposed trades
@@ -80,7 +84,7 @@ class Strategy (object):
         # In either case, the method returns the balances of all assets,
         # and the USD value of our whole fund,
         # after all trades have been executed
-        self.balances = self.MarketAdapter.execute(proposed_trades, charts, self.balances, time)
+        self.balances = self.MarketAdapter.execute(legal_trades, charts, self.balances, time)
         # # TODO The rest here are impl details, can be hidden in a market adapter!
         # btc_value     = self.balances.estimate_total_fiat_value(charts)
         usd_value = self.MarketAdapter.usd_value(time, self.balances, charts)

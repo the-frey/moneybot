@@ -20,21 +20,8 @@ class Balances(object):
         '''
         new_balances = self.balances.copy()
         for proposed in proposed_trades:
-            # TODO Pull this logic out into a market adapter or something
-            # Check that the proposed trade
-            # Is greater than
-            if proposed.from_coin == proposed.fiat and \
-               proposed.bid_amount < 0.0001:
-                continue
-            elif proposed.to_coin == proposed.fiat and \
-               proposed.ask_amount < 0.0001:
-                continue
-            # Check that we are trading a positive amount for a positive amount
-            elif proposed.bid_amount < 0 or \
-                 proposed.ask_amount < 0:
-                continue
             # Check that we have enough to sell:
-            elif proposed.bid_amount > \
+            if proposed.bid_amount > \
                  new_balances[proposed.from_coin]:
                 # If we don't,
                 # We will just sell what's available and move on.
