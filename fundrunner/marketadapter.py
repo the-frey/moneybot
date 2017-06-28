@@ -18,11 +18,7 @@ class MarketAdapter (object):
         #      it's also really more of a simulate_purchases we use in backtesting.
         #      we could split the logic up, to sanity check trade proposals.
         balances = balances.apply_purchases(proposed_trades)
-        # # TODO The rest here are impl details, can be hidden in a market adapter!
-        btc_value     = balances.estimate_total_fiat_value(charts)
-        usd_btc_price = self.btc_price(time)
-        usd_value     = btc_value * usd_btc_price
-        return balances, round(usd_value, 2)
+        return balances
 
 
     # String -> { 'BTC_ETH': { weightedAverage, ...} ...}
@@ -47,9 +43,13 @@ class MarketAdapter (object):
                                  for r in result_set.items() }
         return coin_generator_tuples
 
+
     # String -> Float
-    def btc_price (self, time,
-                   key='weightedAverage'):
+    def btc_rate(self, time,
+                 key='weightedAverage'):
+        '''
+        Returns the rate of BTC in USD.
+        '''
         q ='''
         select * from scrapedChart
         where time <= '{!s}' and time > '{!s}' - 30d
@@ -59,6 +59,15 @@ class MarketAdapter (object):
         '''.format(time, time)
         result_set = self.client.query(q)
         return list(result_set.get_points())[-1][key]
+
+
+    # PandasTimestamp, Balances, Charts -> Float
+    def usd_value (self, time, balances, charts):
+        btc_value     = balances.estimate_total_fiat_value(charts)
+        btc_usd_rate  = self.btc_rate(time)
+        usd_value     = btc_value * btc_usd_rate
+        return round(usd_value, 2)
+
 
     # String, String -> [ Float... ]
     def market_history (self, base, quote, time,

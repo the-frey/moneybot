@@ -80,6 +80,8 @@ class Strategy (object):
         # In either case, the method returns the balances of all assets,
         # and the USD value of our whole fund,
         # after all trades have been executed
-        balances, usd_value = self.MarketAdapter.execute(proposed_trades, charts, self.balances, time)
-        self.balances = balances
+        self.balances = self.MarketAdapter.execute(proposed_trades, charts, self.balances, time)
+        # # TODO The rest here are impl details, can be hidden in a market adapter!
+        # btc_value     = self.balances.estimate_total_fiat_value(charts)
+        usd_value = self.MarketAdapter.usd_value(time, self.balances, charts)
         return usd_value
