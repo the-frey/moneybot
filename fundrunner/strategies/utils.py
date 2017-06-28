@@ -6,13 +6,17 @@ import pandas as pd
 Generic utils
 '''
 
+
 def coin_names (market_name):
     coins = market_name.split('_')
     return coins[0], coins[1]
 
+
 def available_markets (chart_data, fiat):
     return set([ k for k in chart_data.keys() if k.startswith(fiat) ])
 
+
+# TODO This feels like MarketAdapter work
 def held_coins_with_chart_data (chart_data, balances,
                                 fiat='BTC'):
     avail_markets = available_markets(chart_data, fiat)
@@ -39,13 +43,12 @@ def initial_proposed_trades_equal_alloc (chart_data, balances, fiat):
     proposed_trades = []
     for market in avail:
         to_coin = coin_names(market)[1]
-        # Trade from fiat to whatever coin
-        proposed = ProposedTrade(fiat, to_coin)
-        # Find the price of that coin, in fiat
-        # TODO This seems like somebody else's job - and we don't need to do it right now
-        proposed = proposed.estimate_price(chart_data)
-        # How much fiat to sell?
-        proposed = proposed.set_bid_amount(fiat_investment_per_coin)
+        # Trade from fiat to whatever coin,
+        # estimating how much of that coin to bid for
+        # given our investment of fiat.
+        proposed = ProposedTrade(fiat, to_coin) \
+                   .set_bid_amount(fiat_investment_per_coin,
+                                   estimate_price_with=chart_data)
         proposed_trades.append(proposed)
     return proposed_trades
 
@@ -57,32 +60,25 @@ def propose_trades_to_fiat (coins, ideal_fiat_value_per_coin,
                             chart_data, balances, fiat):
     for coin in coins:
         if coin != fiat:
-            # Sell coin for fiat
-            proposed = ProposedTrade(coin, fiat)
-            # Get the coin's price, in fiat
-            proposed = proposed.estimate_price(chart_data)
-            # After rebalance, we want the value of the coin we're trading to
-            # to be equal to the ideal value (in fiat).
-            # First we'll find the value of the coin we currently hold.
-            current_coin_value_fiat = (balances[coin] * proposed.price)
-            # To find how much coin we want to sell,
-            # we'll subtract our holding's value from the ideal value
-            # to produce the value of coin we must sell
-            value_to_sell = current_coin_value_fiat - ideal_fiat_value_per_coin
-            # Now we find the amount of coin equal to this value
-            amount_to_sell = value_to_sell / proposed.price
-            if amount_to_sell > 0:
-                proposed = proposed.set_bid_amount(amount_to_sell)
-                yield proposed
+            # Sell `coin` for `fiat`,
+            # estimating how much `fiat` we should bid
+            # (and how much `coin` we should ask for)
+            # given the fiat value we want that coin to have after the trade
+            proposed = ProposedTrade(coin, fiat) \
+                       .sell_to_achieve_value_of(ideal_fiat_value_per_coin, balances,
+                                                 estimate_price_with=chart_data)
+            yield proposed
+
 
 def propose_trades_from_fiat (coins, investment_per_coin, chart_data, balances, fiat):
     for coin in coins:
-        proposed = ProposedTrade(fiat, coin)
-        proposed = proposed.estimate_price(chart_data)
-        proposed = proposed.set_bid_amount(investment_per_coin)
+        proposed = ProposedTrade(fiat, coin) \
+                   .set_bid_amount(investment_per_coin,
+                                   estimate_price_with=chart_data)
         yield proposed
 
 
+# TODO IF a method takes chart_data, balances, AND fiat,,,,,,,it probably just needs to take ONE market adapter.......
 def rebalancing_proposed_trades_equal_alloc (coins_to_rebalance, chart_data, balances, fiat):
 
     avail = available_markets(chart_data, fiat)
