@@ -1,24 +1,23 @@
 import pandas as pd
 from influxdb import InfluxDBClient
-from fundrunner.coinstore import HistoricalCoinStore, LiveCoinStore
+# from fundrunner.coinstore import HistoricalCoinStore, LiveCoinStore
+# from .market import PoloniexMarket
+from .marketadapter import MarketAdapter#, LiveMarketAdapter
 from .balances import Balances
-from .market import PoloniexMarket
 from datetime import datetime
 from time import sleep
 
 class Strategy (object):
+
+
     def __init__ (self, config,
                   market=None, fiat='BTC'):
-
         self.config = config
-
-        self.trade_interval = config['trade_interval']
-
         self.fiat = fiat
-
         # Interval between trades, in seconds
         self.trade_interval = config['trade_interval']
-
+        # This is none until initialize (until run_live() is called)
+        self.market = None
         # Set up the InfluxDB with historical chart data
         self.client = InfluxDBClient(config['db']['hostname'],
                                      config['db']['port'],
@@ -26,14 +25,13 @@ class Strategy (object):
                                      config['db']['password'],
                                      config['db']['database'])
 
-        # This is none until initialize (until run_live() is called)
-        self.market = None
 
     def run_live (self):
         self.market = PoloniexMarket(self.config['livetrading']['poloniex']['pk'],
                                      self.config['livetrading']['poloniex']['sk'])
         self.coinstore = LiveCoinStore(self.client, self.market)
         initial_balances = self.market.get_balances()
+        # TODO Does Balances need to be here?
         self.balances = Balances(initial_balances)
         while True:
             cur_time = datetime.now()
@@ -44,6 +42,7 @@ class Strategy (object):
             #      see poloniex-index-fund-bot for how this is done
             sleep(self.trade_interval)
 
+
     # self, str, str => List<Float>
     def begin_backtest (self, start_time, end_time):
         '''
@@ -53,9 +52,10 @@ class Strategy (object):
         between start and end.
         '''
         # Set up the historical coinstore
-        self.coinstore = HistoricalCoinStore(self.client)
+        self.MarketAdapter = MarketAdapter(self.client)
         # And get our initial balances
         initial_balances = self.config['backtesting']['initial_balances']
+        # TODO Does Balances need to be here?
         self.balances = Balances(initial_balances)
         # A series of trade-times to run each of our strategies through.
         dates = pd.date_range(pd.Timestamp(start_time),
@@ -65,23 +65,21 @@ class Strategy (object):
             val = self.step(date)
             yield val
 
+
     def step (self, time):
-        charts          = self.coinstore.latest_candlesticks(time)
+        # Get the latest chart data from the market
+        charts          = self.MarketAdapter.latest_chart_data(time)
+        # Now, propose trades. If you're writing a strategy, you will override this method.
+        # TODO self.balances is coming out of nowhere. 
+        #      Can't it get passed into `step()`?
         proposed_trades = self.propose_trades(charts, self.balances, time)
-        if self.market:
-            # TODO PURCHASE
-            #      this can execute asks,
-            #      return trades
-            #      remember - in the future, will all go into InfluxDB
-            results   = [self.market.make_purchase(proposed)
-                         for proposed in proposed_trades]
-        # TODO BALANCES
-        #      apply_balances is a monolith
-        #      it's also really more of a simulate_purchases we use in backtesting.
-        #      we could split the logic up, to sanity check trade proposals.
-        self.balances = self.balances.apply_purchases(proposed_trades)
-        # TODO The rest here are impl details, can be hidden in a market adapter!
-        btc_value     = self.balances.estimate_total_fiat_value(charts)
-        usd_btc_price = self.coinstore.btc_price(time)
-        usd_value     = btc_value * usd_btc_price
-        return round(usd_value, 2)
+        # Finally, the MarketAdapter will execute our trades.
+        # If we're backtesting, these trades won't really happen.
+        # If we're trading for real, we will attempt to execute the proposed trades
+        # at the best price we can.
+        # In either case, the method returns the balances of all assets,
+        # and the USD value of our whole fund,
+        # after all trades have been executed
+        balances, usd_value = self.MarketAdapter.execute(proposed_trades, charts, self.balances, time)
+        self.balances = balances
+        return usd_value

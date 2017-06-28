@@ -20,10 +20,9 @@ class PeakRiderStrategy (Strategy):
       #      so I wouldn't have to manipulate strings.....
       #      Again, this is something for a MarketAdapter
       if coin == self.fiat:
-          currency_pair = 'USD_' + self.fiat
+          prices = self.MarketAdapter.market_history('USD', self.fiat, time)
       else:
-          currency_pair = '{!s}_{!s}'.format(self.fiat, coin)
-      prices = self.coinstore.market_history(currency_pair, time)
+          prices = self.MarketAdapter.market_history(self.fiat, coin, time)
       latest = latest_ppo_hist(prices)
       if latest > 0:
           return True
