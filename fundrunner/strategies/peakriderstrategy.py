@@ -1,5 +1,6 @@
 from ..strategy import Strategy
-from .utils import initial_purchases_equal_alloc, rebalancing_purchases_equal_alloc, held_coins_with_chart_data
+# TODO PURCHASE
+from .utils import initial_proposed_trades_equal_alloc, rebalancing_proposed_trades_equal_alloc, held_coins_with_chart_data
 from .utils import is_buffed, is_buffed_by_power, latest_ppo_hist
 
 def find_buffed_coins (chart_data, balances):
@@ -15,6 +16,9 @@ def find_buffed_coins (chart_data, balances):
 class PeakRiderStrategy (Strategy):
 
   def is_crashing (self, coin, time):
+      # TODO You'd think the coinstore could have a method market_history(base, quote)
+      #      so I wouldn't have to manipulate strings.....
+      #      Again, this is something for a MarketAdapter
       if coin == self.fiat:
           currency_pair = 'USD_' + self.fiat
       else:
@@ -26,19 +30,19 @@ class PeakRiderStrategy (Strategy):
       return False
 
 
-  def get_purchases (self, current_chart_data, current_balances, fiat='BTC'):
+  def propose_trades (self, current_chart_data, current_balances, time):
     # First of all, if we only hold fiat,
     if current_balances.held_coins() == [self.fiat]:
         # Make initial trades
-        return initial_purchases_equal_alloc(current_chart_data, current_balances, fiat)
+        return initial_proposed_trades_equal_alloc(current_chart_data, current_balances, self.fiat)
     # If we do have stuff other than fiat,
     # see if any of those holdings are buffed
     buffed_coins = find_buffed_coins(current_chart_data, current_balances)
     buffed_and_crashing = [coin for coin in buffed_coins
-                           if self.is_crashing(coin, current_balances.time) ]
+                           if self.is_crashing(coin, time) ]
     # if any of them are,
     if len(buffed_and_crashing):
         # sell them so as to reallocate their value eqaully
-        return rebalancing_purchases_equal_alloc(buffed_and_crashing, current_chart_data,
-                                              current_balances, fiat)
+        return rebalancing_proposed_trades_equal_alloc(buffed_and_crashing, current_chart_data,
+                                                       current_balances, self.fiat)
     return []

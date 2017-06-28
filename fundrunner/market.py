@@ -1,6 +1,7 @@
 from poloniex import Poloniex
 import numpy as np
 import pandas as pd
+# TODO PURCHASE
 from . import Purchase
 from time import sleep
 
@@ -12,8 +13,7 @@ class PoloniexMarket(Market):
   def __init__(self, pubkey, privkey):
     self.polo = Poloniex(pubkey, privkey)
 
-    # TODO does this really return a purchase? I don't think so....
-    # TODO helper method recursively buys, use immediateOrCancel
+  # TODO PURCHASE
   def make_purchase(self, purchase, fiat='BTC'):
     """ Performs a purchase on the market given a source coin, destination coin,
         and amount in each.  Returns the real purchase amount, which may not be

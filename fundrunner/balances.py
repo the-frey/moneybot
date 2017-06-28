@@ -1,6 +1,3 @@
-def filter_none (lst):
-    return [x for x in lst if x != None]
-
 class Balances(object):
     # balances = { 'COIN': coin_amt }
     def __init__(self, balances, fiat='BTC'):
@@ -14,16 +11,44 @@ class Balances(object):
         return [k  for k in self.balances.keys()
                 if self.balances[k] > 0 ]
 
-    # self, Purchase -> Balance
-    def apply_purchases (self, purchases):
+
+    # TODO This should be called simulate_purchases
+    def apply_purchases (self, proposed_trades):
+        '''
+        This method sanity-checks all proposed purchases,
+        before shipping them off to the backtest / live-market.
+        '''
         new_balances = self.balances.copy()
-        purchases = filter_none(purchases)
-        if len(purchases) > 0:
-            for from_coin, from_amount, to_coin, to_amount in purchases:
-                new_balances[from_coin] -= from_amount
-                if to_coin not in new_balances:
-                    new_balances[to_coin] = 0
-                new_balances[to_coin] += to_amount
+        for proposed in proposed_trades:
+            # TODO Pull this logic out into a market adapter or something
+            # Check that the proposed trade
+            # Is greater than
+            if proposed.from_coin == proposed.fiat and \
+               proposed.bid_amount < 0.0001:
+                continue
+            elif proposed.to_coin == proposed.fiat and \
+               proposed.ask_amount < 0.0001:
+                continue
+            # Check that we are trading a positive amount for a positive amount
+            elif proposed.bid_amount < 0 or \
+                 proposed.ask_amount < 0:
+                continue
+            # Check that we have enough to sell:
+            elif proposed.bid_amount > \
+                 new_balances[proposed.from_coin]:
+                # If we don't,
+                # We will just sell what's available and move on.
+                proposed.bid_amount = new_balances[proposed.from_coin]
+            # If we pass these conditions, we can sell
+            new_balances[proposed.from_coin] -= proposed.bid_amount
+            if proposed.to_coin not in new_balances:
+                new_balances[proposed.to_coin] = 0
+            # TODO we can get fancier with this later,
+            # observe trends in actual trades we propose vs execute,
+            # and use that to make more realistic simulations~!
+            # (after all, our proposed price will not always be achievable)
+            est_trade_amt = proposed.bid_amount / proposed.price
+            new_balances[proposed.to_coin] += est_trade_amt
         return Balances(new_balances)
 
     # self, charts -> Dict

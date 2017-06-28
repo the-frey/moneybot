@@ -1,7 +1,6 @@
 import pandas as pd
 from influxdb import InfluxDBClient
 from fundrunner.coinstore import HistoricalCoinStore, LiveCoinStore
-from . import Purchase
 from .balances import Balances
 from .market import PoloniexMarket
 from datetime import datetime
@@ -67,12 +66,21 @@ class Strategy (object):
             yield val
 
     def step (self, time):
-        charts        = self.coinstore.latest_candlesticks(time)
-        purchases     = self.get_purchases(charts, self.balances)
+        charts          = self.coinstore.latest_candlesticks(time)
+        proposed_trades = self.propose_trades(charts, self.balances, time)
         if self.market:
-            results   = [self.market.make_purchase(purchase)
-                         for purchase in purchases]
-        self.balances = self.balances.apply_purchases(purchases)
+            # TODO PURCHASE
+            #      this can execute asks,
+            #      return trades
+            #      remember - in the future, will all go into InfluxDB
+            results   = [self.market.make_purchase(proposed)
+                         for proposed in proposed_trades]
+        # TODO BALANCES
+        #      apply_balances is a monolith
+        #      it's also really more of a simulate_purchases we use in backtesting.
+        #      we could split the logic up, to sanity check trade proposals.
+        self.balances = self.balances.apply_purchases(proposed_trades)
+        # TODO The rest here are impl details, can be hidden in a market adapter!
         btc_value     = self.balances.estimate_total_fiat_value(charts)
         usd_btc_price = self.coinstore.btc_price(time)
         usd_value     = btc_value * usd_btc_price

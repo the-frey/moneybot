@@ -1,13 +1,10 @@
-from .. import Purchase
+from ..proposedtrade import ProposedTrade
 import numpy as np
 import pandas as pd
 
 '''
 Generic utils
 '''
-
-def filter_none (lst):
-    return [x for x in lst if x != None]
 
 def coin_names (market_name):
     coins = market_name.split('_')
@@ -25,97 +22,100 @@ def held_coins_with_chart_data (chart_data, balances,
     avail_coins  += [fiat]
     return set(balances.held_coins()).intersection(avail_coins)
 
-def get_purchase (current_chart_data, from_coin, from_amount, to_coin,
-                  fee=0.0025, fiat='BTC', price_key='weightedAverage',
-                  min_fiat_value_for_trade=0.0001):
-    '''
-    Returns a Purchase, or None.
-    '''
-    def purchase_amount (investment, price):
-        '''
-        Get the amount of some coin purchased,
-        given an investment (in quote), and a price (in quote),
-        accounting for trading fees.
-        '''
-        in_amt = investment - (investment * fee)
-        return in_amt / price
-    # if the coin is fiat,
-    if to_coin == fiat:
-        market_name = '{!s}_{!s}'.format(fiat, from_coin)
-        to_price = 1 / float(current_chart_data[market_name][price_key])
-        to_amount = purchase_amount(from_amount, to_price)
-        if to_amount > min_fiat_value_for_trade:
-            return Purchase(from_coin, from_amount, to_coin, to_amount)
-    # if coin is not fiat,
-    # and we're buying more than 0.0001 BTC worth,
-    elif to_coin != fiat and from_amount > min_fiat_value_for_trade:
-        market_name = '{!s}_{!s}'.format(fiat, to_coin)
-        to_price = float(current_chart_data[market_name][price_key])
-        to_amount = purchase_amount(from_amount, to_price)
-        return Purchase(from_coin, from_amount, to_coin, to_amount)
-    # If none of these conditions are met,
-    # we return None.
-    # None values are explicitly filtered at the ends of the system,
-    # e.g. in balances.apply_purchases() or market.make_purchase()
-    return None
-
 
 '''
 Initial allocation tools
 '''
 
-def initial_purchases_equal_alloc (chart_data, balances, fiat):
+def initial_proposed_trades_equal_alloc (chart_data, balances, fiat):
+    '''
+    "Initial" purchases are from fiat.
+    (We assume funds start with only a fiat balance.)
+    The resulting proposed trades should result in an equal allocation (of value, in fiat)
+    across all "reachable" markets (markets in which the base currency is fiat).
+    '''
     avail = available_markets(chart_data, fiat)
-    amount_to_invest_per_coin = balances[fiat] / ( len(avail) + 1.0 )
-    purchases = [ get_purchase(chart_data,
-                                fiat,
-                                amount_to_invest_per_coin,
-                                coin_names(market)[1])
-                for market in avail ]
-    return purchases
-
+    fiat_investment_per_coin = balances[fiat] / ( len(avail) + 1.0 )
+    proposed_trades = []
+    for market in avail:
+        to_coin = coin_names(market)[1]
+        # Trade from fiat to whatever coin
+        proposed = ProposedTrade(fiat, to_coin)
+        # Find the price of that coin, in fiat
+        # TODO This seems like somebody else's job - and we don't need to do it right now
+        proposed = proposed.estimate_price(chart_data)
+        # How much fiat to sell?
+        proposed = proposed.set_bid_amount(fiat_investment_per_coin)
+        proposed_trades.append(proposed)
+    return proposed_trades
 
 '''
 Rebalancing tools
 '''
 
+def propose_trades_to_fiat (coins, ideal_fiat_value_per_coin,
+                            chart_data, balances, fiat):
+    for coin in coins:
+        if coin != fiat:
+            # Sell coin for fiat
+            proposed = ProposedTrade(coin, fiat)
+            # Get the coin's price, in fiat
+            proposed = proposed.estimate_price(chart_data)
+            # After rebalance, we want the value of the coin we're trading to
+            # to be equal to the ideal value (in fiat).
+            # First we'll find the value of the coin we currently hold.
+            current_coin_value_fiat = (balances[coin] * proposed.price)
+            # To find how much coin we want to sell,
+            # we'll subtract our holding's value from the ideal value
+            # to produce the value of coin we must sell
+            value_to_sell = current_coin_value_fiat - ideal_fiat_value_per_coin
+            # Now we find the amount of coin equal to this value
+            amount_to_sell = value_to_sell / proposed.price
+            if amount_to_sell > 0:
+                proposed = proposed.set_bid_amount(amount_to_sell)
+                yield proposed
 
-def rebalancing_purchases_equal_alloc (coins_to_rebalance, chart_data, balances, fiat):
+def propose_trades_from_fiat (coins, investment_per_coin, chart_data, balances, fiat):
+    for coin in coins:
+        proposed = ProposedTrade(fiat, coin)
+        proposed = proposed.estimate_price(chart_data)
+        proposed = proposed.set_bid_amount(investment_per_coin)
+        yield proposed
+
+
+def rebalancing_proposed_trades_equal_alloc (coins_to_rebalance, chart_data, balances, fiat):
+
     avail = available_markets(chart_data, fiat)
     total_value = balances.estimate_total_fiat_value(chart_data)
-    ideal_value_fiat = total_value / len(avail) # TODO maybe +1? like above?
-    purchases_to_fiat = []
-    for coin in coins_to_rebalance:
-        if coin != fiat:
-            coin_price_fiat = float(chart_data[fiat + '_' + coin]['weightedAverage'])
-            holding_value_fiat = (balances[coin] * coin_price_fiat)
-            value_to_offload_fiat = holding_value_fiat - ideal_value_fiat
-            amount_to_sell = value_to_offload_fiat / coin_price_fiat
-            purchase = get_purchase(
-                chart_data,
-                coin,
-                amount_to_sell,
-                fiat, )
-            purchases_to_fiat.append(purchase)
-    purchases_to_fiat = filter_none(purchases_to_fiat)
+    ideal_fiat_value_per_coin = total_value / len(avail) # TODO maybe +1? like above?
 
-    est_bals_after_fiat_trades = balances.apply_purchases(purchases_to_fiat)
+    proposed_trades_to_fiat = list(propose_trades_to_fiat(coins_to_rebalance,
+                                                          ideal_fiat_value_per_coin,
+                                                          chart_data,
+                                                          balances,
+                                                          fiat))
 
-    if fiat in coins_to_rebalance and len(purchases_to_fiat) > 0:
+    # Next, we will simulate actually executing all of these trades
+    # Afterward, we'll get some simulated balances
+    # TODO apply_purchaess should really be some kind of Simulate or whatever in a market adapter
+    est_bals_after_fiat_trades = balances.apply_purchases(proposed_trades_to_fiat)
+
+    if fiat in coins_to_rebalance and len(proposed_trades_to_fiat) > 0:
         fiat_after_trades        = est_bals_after_fiat_trades[fiat]
-        to_redistribute          = fiat_after_trades - ideal_value_fiat
-        markets_divested_from    = [fiat + '_' + purchase.from_coin
-                                    for purchase in purchases_to_fiat]
+        to_redistribute          = fiat_after_trades - ideal_fiat_value_per_coin
+        markets_divested_from    = [fiat + '_' + proposed.from_coin
+                                    for proposed in proposed_trades_to_fiat]
         markets_to_buy           = set(avail) - set(markets_divested_from)
-        to_redistribute_per_coin = to_redistribute / len(markets_to_buy)
-        purchase_from_fiat       = [get_purchase(chart_data,
-                                                 fiat,
-                                                 to_redistribute_per_coin,
-                                                 coin_names(market)[1])
-                                    for market in avail ]
-        return purchases_to_fiat + purchase_from_fiat
+        coins_to_buy             = [coin_names(m)[1] for m in markets_to_buy]
+        to_redistribute_per_coin = to_redistribute / len(coins_to_buy)
+        proposed_trades_from_fiat = propose_trades_from_fiat(coins_to_buy,
+                                                             to_redistribute_per_coin,
+                                                             chart_data,
+                                                             balances,
+                                                             fiat)
+        return proposed_trades_to_fiat + list(proposed_trades_from_fiat)
 
-    return purchases_to_fiat
+    return proposed_trades_to_fiat
 
 
 '''
