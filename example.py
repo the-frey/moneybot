@@ -1,6 +1,5 @@
 from influxdb import InfluxDBClient
 import json
-from fundrunner.coinstore import HistoricalCoinStore
 from fundrunner.strategies.buyholdstrategy import BuyHoldStrategy
 from fundrunner.strategies.buffedcoinstrategy import BuffedCoinStrategy
 from fundrunner.strategies.peakriderstrategy import PeakRiderStrategy

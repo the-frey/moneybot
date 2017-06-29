@@ -7,12 +7,6 @@ from .balances import Balances
 from datetime import datetime
 from time import sleep
 
-'''
-Utils
-'''
-
-
-
 
 class Strategy (object):
 
