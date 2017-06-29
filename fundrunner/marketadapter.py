@@ -6,36 +6,42 @@ class MarketAdapter (object):
         # self.client = influx_client
 
 
-    # List<ProposedTrade> -> Generator<ProposedTrade>
+    # self, ProposedTrade, Charts -> Bool
+    def is_legal (self, proposed_trade, charts):
+
+        # Check that we are trading a positive amount for a positive amount
+        if proposed.bid_amount < 0 or \
+           proposed.ask_amount < 0:
+            print('WARN: Filtering out proposed trade: bid/ask amounts zero or negative',
+                  str(proposed))
+            return False
+
+        # Check that the proposed trade minimum fiat trade amount.
+        if (proposed.from_coin == proposed.fiat and \
+            proposed.bid_amount < 0.0001) or \
+            (proposed.to_coin == proposed.fiat and \
+             proposed.ask_amount < 0.0001):
+            print('WARN: Filtering out proposed trade: transaction too small',
+                  str(proposed))
+            return False
+
+        # Check that the trade is on a market that exists.
+        if proposed.market_name not in charts.keys():
+            print('WARN: Filtering out proposed trade: market name not in charts',
+                  str(proposed))
+            return False
+
+        return True
+
+    # self, List<ProposedTrade>, Charts -> Generator<ProposedTrade>
     def filter_legal (self, proposed_trades, charts):
         '''
         Takes a list of ProposedTrade objects.
         Checks that each is a legal trade by the rules of our market.
         '''
         for proposed in proposed_trades:
-            # Check that we are trading a positive amount for a positive amount
-            if proposed.bid_amount < 0 or \
-                 proposed.ask_amount < 0:
-                print('WARN: Filtering out proposed trade: bid/ask amounts zero or negative',
-                      str(proposed))
-                continue
-            # Check that the proposed trade minimum fiat trade amount.
-            if (proposed.from_coin == proposed.fiat and \
-                proposed.bid_amount < 0.0001) or \
-               (proposed.to_coin == proposed.fiat and \
-                proposed.ask_amount < 0.0001):
-                print('WARN: Filtering out proposed trade: transaction too small',
-                      str(proposed))
-                continue
-            # Check that the trade is on a market that exists.
-            if proposed.market_name not in charts.keys():
-                print('WARN: Filtering out proposed trade: market name not in charts',
-                      str(proposed))
-                continue
-
-            # if all these tests pass,
-            # the proposed trade is legal!
-            yield proposed
+            if is_legal(proposed):
+                yield proposed
 
 
     # List<ProposedTrade> -> Float
