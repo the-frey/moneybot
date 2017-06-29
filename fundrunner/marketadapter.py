@@ -7,7 +7,7 @@ class MarketAdapter (object):
 
 
     # self, ProposedTrade, Charts -> Bool
-    def is_legal (self, proposed_trade, charts):
+    def is_legal (self, proposed, charts):
 
         # Check that we are trading a positive amount for a positive amount
         if proposed.bid_amount < 0 or \
@@ -40,7 +40,7 @@ class MarketAdapter (object):
         Checks that each is a legal trade by the rules of our market.
         '''
         for proposed in proposed_trades:
-            if is_legal(proposed):
+            if self.is_legal(proposed, charts):
                 yield proposed
 
 

@@ -19,7 +19,7 @@ class MarketHistory (object):
     # We could, in the future, address this by taking all the candlesticks since we last checked
     # and pass them through to the strategy together, sorted ny time.
     # Then, the strategy can then decide how to combine them.
-    def latest_chart_data (self, time):
+    def latest (self, time):
         q ='''
         select * from scrapedChart
         where time <= '{!s}' and time > '{!s}' - 1d
@@ -35,8 +35,8 @@ class MarketHistory (object):
 
 
     # String -> Float
-    def btc_rate(self, time,
-                 key='weightedAverage'):
+    def btc_rate (self, time,
+                  key='weightedAverage'):
         '''
         Returns the rate of BTC in USD.
         '''
@@ -60,7 +60,7 @@ class MarketHistory (object):
 
 
     # String, String -> [ Float... ]
-    def market_history (self, base, quote, time,
+    def asset_history (self, time, base, quote,
                             days_back=30, key='price_usd'):
         currency_pair = '{!s}_{!s}'.format(base, quote)
         q ='''
@@ -74,3 +74,4 @@ class MarketHistory (object):
         df = pd.Series([p[1] for p in prices])
         df.index = [p[0] for p in prices]
         return df
+
