@@ -100,6 +100,7 @@ class Strategy (object):
     '''
     Convenience functions
     '''
+
     def coin_names (self, market_name):
         coins = market_name.split('_')
         return coins[0], coins[1]
@@ -120,8 +121,6 @@ class Strategy (object):
     def held_coins_with_chart_data (self, chart_data, balances,
                                     fiat='BTC'):
         avail_coins = self.available_coins(chart_data)
-        # The fiat is always available, so we'll add that to the list as well
-        avail_coins  += [fiat]
         return set(balances.held_coins()).intersection(avail_coins)
 
 
@@ -161,22 +160,22 @@ class Strategy (object):
         '''
         available_coins = set(self.available_coins(chart_data)) - set([ self.fiat ])
         fiat_investment_per_coin = balances[self.fiat] / ( len(available_coins) + 1.0 )
-        return self.propose_trades_from_fiat(available_coins, fiat_investment_per_coin,
-                                        chart_data, balances)
+        trades = self.propose_trades_from_fiat(available_coins, fiat_investment_per_coin,
+                                               chart_data, balances)
+        return trades
 
 
     # TODO IF a method takes chart_data, balances, AND fiat,,,,,,,it probably just needs to take ONE market adapter.......
     def rebalancing_proposed_trades (self, coins_to_rebalance, chart_data, balances):
 
-        avail = self.available_markets(chart_data)
+        available_coins = set(self.available_coins(chart_data)) - set([ self.fiat ])
         total_value = balances.estimate_total_fiat_value(chart_data)
-        ideal_fiat_value_per_coin = total_value / len(avail) # TODO maybe +1? like above?
+        ideal_fiat_value_per_coin = total_value / len(available_coins) # TODO maybe +1? like above?
 
         proposed_trades_to_fiat = list(self.propose_trades_to_fiat(coins_to_rebalance,
                                                                    ideal_fiat_value_per_coin,
                                                                    chart_data,
                                                                    balances,))
-        # proposed_trades_to_fiat = self.MarketAdapter(proposed_trades_to_fiat)
 
         # Next, we will simulate actually executing all of these trades
         # Afterward, we'll get some simulated balances
@@ -186,10 +185,9 @@ class Strategy (object):
         if self.fiat in coins_to_rebalance and len(proposed_trades_to_fiat) > 0:
             fiat_after_trades        = est_bals_after_fiat_trades[self.fiat]
             to_redistribute          = fiat_after_trades - ideal_fiat_value_per_coin
-            markets_divested_from    = [self.fiat + '_' + proposed.from_coin
-                                        for proposed in proposed_trades_to_fiat]
-            markets_to_buy           = set(avail) - set(markets_divested_from)
-            coins_to_buy             = [self.coin_names(m)[1] for m in markets_to_buy]
+            coins_divested_from      = [ proposed.from_coin
+                                         for proposed in proposed_trades_to_fiat]
+            coins_to_buy             = set(available_coins) - set(coins_divested_from) - set( [self.fiat] )
             to_redistribute_per_coin = to_redistribute / len(coins_to_buy)
             proposed_trades_from_fiat = self.propose_trades_from_fiat(coins_to_buy,
                                                                       to_redistribute_per_coin,

@@ -49,20 +49,6 @@ class Balances(object):
         new_balances = self.balances.copy()
         for proposed in proposed_trades:
 
-            # TODO Where should this check / mutation go?
-            #      Don't want duplication between simulating purchases
-            #      and actually performing them.
-            #      perhaps one method should filter illegal trades,
-            #      and coerce them into legal trades,
-            #      depending on what's necessary
-
-            # Check that we have enough to sell:
-            if proposed.bid_amount > \
-                 new_balances[proposed.from_coin]:
-                # If we don't,
-                # We will just sell what's available and move on.
-                proposed.bid_amount = new_balances[proposed.from_coin]
-
             # Actually simulate purchase of the proposed trade
             # TODO I hate mutating stuff out of scope, my god
             new_balances = self.simulate(proposed, new_balances)
