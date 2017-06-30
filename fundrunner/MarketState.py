@@ -49,7 +49,11 @@ class MarketState (object):
 
     # String -> Bool
     def only_holding (self, coin):
+        '''
+        Returns true if the only thing we are holding is `coin`
+        '''
         return self._held_coins() == [ coin ]
+
 
     # MarketState -> Set<String>
     def available_coins (self):
@@ -86,20 +90,26 @@ class MarketState (object):
         return fiat_values
 
 
+    # -> Float
     def estimate_total_value (self, **kwargs):
+        '''
+        Returns the sume of all holding values, in fiat.
+        '''
         return sum(self.estimate_values(**kwargs).values())
 
+
+    # -> Float
     def estimate_total_value_usd (self, **kwargs):
-        est = self.estimate_total_value() * self.chart_data['USD_BTC']['weightedAverage']
+        '''
+        Returns the sum of all holding values, in USD.
+        '''
+        est = self.estimate_total_value() * self.price('USD_BTC', **kwargs)
         return round(est, 2)
 
 
-    # TODO Not sure this method should even exist.
-    #       MarketAdapter could have a method execute_trades()
-    #       that processes each trade in order, updating its Balance as it goes.
-    #       if that's explicit,
-    #       we can just overwrite some execute() method
-    #       for whatever market / backtest stiuation......
+
+    # TODO Not sure this really belongs here
+    #       maybe more the job of BacktestMarketAdapter
     def simulate_trades (self, proposed_trades):
 
         # TODO Clearly this should be in a MarketAdapter

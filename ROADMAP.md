@@ -6,7 +6,14 @@ Feel free to reorganize or make suggestions based on what you think is priority 
 
 * Create a LiveMarketAdapter and a BacktestMarketAdapter
   * Possibly live in different files
-  
+
+* Bring in the scraper
+    * Should auto- backfill when trading live.
+
+* Optional but nice
+    * Replace with proper logging everywhere
+    * Strategy shouldn't have access to MarketAdapter.execute()
+
 ## backtest
 
 * Blacklist for coins
