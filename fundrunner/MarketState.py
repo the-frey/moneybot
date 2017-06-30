@@ -107,23 +107,20 @@ class MarketState (object):
         return round(est, 2)
 
 
-
     # TODO Not sure this really belongs here
     #       maybe more the job of BacktestMarketAdapter
     def simulate_trades (self, proposed_trades):
+        '''
+        TODO Docstring
 
-        # TODO Clearly this should be in a MarketAdapter
+        TODO State assumptions going into this simulation
+
+        We can get fancier with this later,
+        observe trends in actual trades we propose vs execute,
+        and use that to make more realistic simulations~!
+        (after all, our proposed price will not always be achievable)
+        '''
         def simulate (proposed, new_balances):
-            '''
-            TODO Docstring
-
-            TODO State assumptions going into this simulation
-
-            We can get fancier with this later,
-            observe trends in actual trades we propose vs execute,
-            and use that to make more realistic simulations~!
-            (after all, our proposed price will not always be achievable)
-            '''
             # TODO This makes sense as logic, but new_balances is confusing
             new_balances[proposed.from_coin] -= proposed.bid_amount
             if proposed.to_coin not in new_balances:

@@ -62,6 +62,11 @@ class ProposedTrade (object):
         Returns the approximate price of the quote value, given some chart data.
         '''
         base_price = market_state.price(self.market_name)
+        # The price (when buying/selling)
+        # should match the self.market_name.
+        # So, we keep around a self.market_price to match
+        # self.price is always in the quote currency.
+        self.market_price = base_price
         if self.to_coin == self.fiat:
             self.price = (1 / base_price)
         else:

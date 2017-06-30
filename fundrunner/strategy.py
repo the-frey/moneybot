@@ -1,12 +1,10 @@
 import pandas as pd
-from influxdb import InfluxDBClient
 from .ProposedTrade import ProposedTrade
 from .MarketHistory import MarketHistory
-from .MarketAdapter import MarketAdapter#, LiveMarketAdapter
+# from .MarketAdapter import MarketAdapter#, LiveMarketAdapter
 from .MarketState import MarketState
 from datetime import datetime
 from time import sleep
-
 
 
 class Strategy (object):
@@ -33,22 +31,24 @@ class Strategy (object):
         market_state = MarketState(charts, balances, time, self.fiat)
         # Now, propose trades. If you're writing a strategy, you will override this method.
         proposed_trades = self.propose_trades(market_state)
-        # The user's propose_trades() method could be returning anything,
-        # we don't trust it necessarily. So, we have our MarketAdapter
-        # assure that all the trades are legal, by the market's rules.
-        # `filter_legal()` will throw informative warnings if any trades
-        # get filtered out!
-        # TODO Can the Strategy get access to this sanity checker?
-        assumed_legal_trades = self.MarketAdapter.filter_legal(proposed_trades, market_state)
-        # Finally, the MarketAdapter will execute our trades.
-        # If we're backtesting, these trades won't really happen.
-        # If we're trading for real, we will attempt to execute the proposed trades
-        # at the best price we can.
-        # In either case, this method is side-effect-y;
-        # it sets MarketAdapter.balances, after all trades have been executed.
-        self.MarketAdapter.execute(assumed_legal_trades, market_state)
+        # If the strategy proposed any trades, we execute them.
+        if proposed_trades:
+            # The user's propose_trades() method could be returning anything,
+            # we don't trust it necessarily. So, we have our MarketAdapter
+            # assure that all the trades are legal, by the market's rules.
+            # `filter_legal()` will throw informative warnings if any trades
+            # get filtered out!
+            # TODO Can the Strategy get access to this sanity checker?
+            assumed_legal_trades = self.MarketAdapter.filter_legal(proposed_trades, market_state)
+            # Finally, the MarketAdapter will execute our trades.
+            # If we're backtesting, these trades won't really happen.
+            # If we're trading for real, we will attempt to execute the proposed trades
+            # at the best price we can.
+            # In either case, this method is side-effect-y;
+            # it sets MarketAdapter.balances, after all trades have been executed.
+            self.MarketAdapter.execute(assumed_legal_trades, market_state)
         # Finally, we get the USD value of our whole fund,
-        # after all trades have been executed
+        # now that all trades (if there were any) have been executed.
         usd_value = market_state.estimate_total_value_usd()
         return usd_value
 
@@ -142,7 +142,7 @@ class Strategy (object):
 
         possible_investments = self._possible_investments(market_state)
         total_value = market_state.estimate_total_value()
-        ideal_fiat_value_per_coin = total_value / len(possible_investments) 
+        ideal_fiat_value_per_coin = total_value / len(possible_investments)
 
         proposed_trades_to_fiat = list(self._propose_trades_to_fiat(coins_to_rebalance,
                                                                     ideal_fiat_value_per_coin,

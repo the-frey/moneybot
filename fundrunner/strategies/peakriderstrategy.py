@@ -74,4 +74,4 @@ class PeakRiderStrategy (BuffedCoinStrategy):
             # sell them so as to reallocate their value eqaully
             proposed = self.rebalancing_proposed_trades(buffed_and_crashing, market_state)
             return proposed
-        return []
+        return

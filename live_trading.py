@@ -1,4 +1,5 @@
 import json
+from fundrunner.market_adapters.LiveMarketAdapter import LiveMarketAdapter
 from fundrunner.strategies.buffedcoinstrategy import BuffedCoinStrategy
 
 with open('config.json') as cfg_file:

@@ -1,5 +1,5 @@
 import json
-from fundrunner.MarketAdapter import BacktestMarketAdapter
+from fundrunner.market_adapters.BacktestMarketAdapter import BacktestMarketAdapter
 from fundrunner.strategies.buyholdstrategy import BuyHoldStrategy
 from fundrunner.strategies.buffedcoinstrategy import BuffedCoinStrategy
 from fundrunner.strategies.peakriderstrategy import PeakRiderStrategy

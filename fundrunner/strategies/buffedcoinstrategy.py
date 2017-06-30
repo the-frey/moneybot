@@ -30,9 +30,11 @@ class BuffedCoinStrategy (Strategy):
 
 
     def propose_trades (self, market_state):
+
         # First of all, if we only hold fiat,
         if market_state.only_holding(self.fiat):
             return self.initial_proposed_trades(market_state)
+
         # If we do have stuff other than fiat,
         # see if any of those holdings are buffed
         buffed_coins = self.find_buffed_coins(market_state)
@@ -40,4 +42,5 @@ class BuffedCoinStrategy (Strategy):
         if len(buffed_coins):
             # sell them so as to reallocate their value eqaully
             return self.rebalancing_proposed_trades(buffed_coins, market_state)
-        return []
+
+        return
