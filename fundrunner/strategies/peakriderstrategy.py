@@ -1,4 +1,4 @@
-from .buffedcoinstrategy import BuffedCoinStrategy
+from .BuffedCoinStrategy import BuffedCoinStrategy
 import numpy as np
 import pandas as pd
 

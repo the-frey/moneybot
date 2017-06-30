@@ -1,8 +1,8 @@
 import json
 from fundrunner.market_adapters.BacktestMarketAdapter import BacktestMarketAdapter
-from fundrunner.strategies.buyholdstrategy import BuyHoldStrategy
-from fundrunner.strategies.buffedcoinstrategy import BuffedCoinStrategy
-from fundrunner.strategies.peakriderstrategy import PeakRiderStrategy
+from fundrunner.strategies.BuyHoldStrategy import BuyHoldStrategy
+from fundrunner.strategies.BuffedCoinStrategy import BuffedCoinStrategy
+from fundrunner.strategies.PeakRiderStrategy import PeakRiderStrategy
 import pandas as pd
 
 with open('config.json.example') as cfg_file:

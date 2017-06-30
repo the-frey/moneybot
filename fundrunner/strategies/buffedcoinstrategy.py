@@ -1,8 +1,8 @@
-from ..Strategy import Strategy
+from .EqualWeightIndexFund import EqualWeightIndexFund
 import numpy as np
 
 
-class BuffedCoinStrategy (Strategy):
+class BuffedCoinStrategy (EqualWeightIndexFund):
 
     def median (self, est_values):
         return np.median(list(est_values.values()))
@@ -20,7 +20,6 @@ class BuffedCoinStrategy (Strategy):
 
 
     def find_buffed_coins (self, market_state):
-        # if we hold other stuff,
         est_values = market_state.estimate_values()
         buffed_coins = [
             coin for coin in market_state.held_coins_with_chart_data()

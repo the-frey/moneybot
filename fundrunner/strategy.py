@@ -12,16 +12,14 @@ class Strategy (object):
     TODO Docstring
     '''
 
-    def __init__ (self, MarketAdapter, config,
-                  fiat='BTC'):
+    def __init__ (self, MarketAdapter, config):
         self.config = config
-        self.fiat = fiat
-        # MarketHistory stores historical market data
-        self.MarketHistory = MarketHistory(self.config)
+        self.fiat = config['fiat']
         # Interval between trades, in seconds
         self.trade_interval = config['trade_interval']
-        # This is set internally at runtime
-        # TODO Better place for this? Where to pass this in?
+        # MarketHistory stores historical market data
+        self.MarketHistory = MarketHistory(self.config)
+        # MarketAdapter executes trades, fetches balances
         self.MarketAdapter = MarketAdapter(self.config)
 
 
@@ -120,7 +118,6 @@ class Strategy (object):
             proposed = ProposedTrade(self.fiat, coin) \
                        .set_bid_amount(fiat_investment_per_coin, market_state)
             yield proposed
-
 
     def initial_proposed_trades (self, market_state):
         '''
