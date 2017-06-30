@@ -3,6 +3,10 @@ from influxdb import InfluxDBClient
 
 class MarketHistory (object):
 
+    '''
+    TODO Docstring
+    '''
+
     def __init__ (self, config):
         self.client = InfluxDBClient(config['db']['hostname'],
                                      config['db']['port'],

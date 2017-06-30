@@ -1,26 +1,13 @@
-class MarketAdapter (object):
-
-    def get_balances (self):
-        raise NotImplementedError
-
-    def execute (self, proposed_trades, market_state):
-        raise NotImplementedError
-
-    def is_legal (self, proposed, market_state):
-        raise NotImplementedError
-
-    # self, List<ProposedTrade>, MarketState -> Generator<ProposedTrade>
-    def filter_legal (self, proposed_trades, market_state):
-        '''
-        Takes a list of ProposedTrade objects.
-        Checks that each is a legal trade by the rules of our market.
-        '''
-        for proposed in proposed_trades:
-            if self.is_legal(proposed, market_state):
-                yield proposed
-
+from . import MarketAdapter
 
 class PoloniexMarketAdapter (MarketAdapter):
+
+    '''
+    This adapter just implements an `is_legal` method,
+    encoding Poloniex's rules.
+    It should apply to any adapter wanting to do business on Poloniex.
+    More useful adapters inherit from this.
+    '''
 
     # self, ProposedTrade, MarketState -> Bool
     def is_legal (self, proposed, market_state):

@@ -1,5 +1,9 @@
 class MarketState (object):
 
+    '''
+    TODO Docstring
+    '''
+
     def __init__ (self, chart_data, balances, time, fiat):
         self.chart_data = chart_data
         self.balances = balances

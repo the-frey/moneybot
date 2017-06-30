@@ -1,13 +1,16 @@
-import pandas as pd
 from .ProposedTrade import ProposedTrade
 from .MarketHistory import MarketHistory
-# from .MarketAdapter import MarketAdapter#, LiveMarketAdapter
 from .MarketState import MarketState
 from datetime import datetime
 from time import sleep
+import pandas as pd
 
 
 class Strategy (object):
+
+    '''
+    TODO Docstring
+    '''
 
     def __init__ (self, MarketAdapter, config,
                   fiat='BTC'):
@@ -53,19 +56,16 @@ class Strategy (object):
         return usd_value
 
 
-    # def run_live (self):
-    #     # TODO
-    #     # self.market = PoloniexMarket(self.config['livetrading']['poloniex']['pk'],
-    #     #                              self.config['livetrading']['poloniex']['sk'])
-    #     # TODO self.coinstore = LiveCoinStore(self.client, self.market)
-    #     while True:
-    #         cur_time = datetime.now()
-    #         print('Trading', cur_time)
-    #         usd_val = self.step(cur_time)
-    #         print('Est. USD value', usd_val)
-    #         # TODO Count the time that the step took to run
-    #         #      see poloniex-index-fund-bot for how this is done
-    #         sleep(self.trade_interval)
+    def run_live (self):
+        while True:
+            # TODO Backfill historical data using the scraper!
+            cur_time = datetime.now()
+            print('Trading', cur_time)
+            usd_val = self.step(cur_time)
+            print('Est. USD value', usd_val)
+            # TODO Count the time that the step took to run
+            #      see poloniex-index-fund-bot for how this is done
+            sleep(self.trade_interval)
 
 
     # self, str, str => List<Float>

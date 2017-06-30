@@ -1,9 +1,9 @@
-from . import MarketAdapter
+from .PoloniexMarketAdapter import PoloniexMarketAdapter
 from poloniex import Poloniex
 from time import sleep
 import operator
 
-def LiveMarketAdapter (MarketAdapter):
+def LiveMarketAdapter (PoloniexMarketAdapter):
 
     def __init__ (self, config):
         self.polo = Poloniex(self.config['livetrading']['poloniex']['pk'],
@@ -22,7 +22,6 @@ def LiveMarketAdapter (MarketAdapter):
 
 
     def execute (self, proposed_trades, market_state):
-        # Now, we will actually execute the trades.
         for trade in proposed_trades:
             self._place_order(trade, market_state)
         self.balances = self.get_balances()
@@ -32,8 +31,15 @@ def LiveMarketAdapter (MarketAdapter):
     Private methods
     '''
 
+    # Float, Method, [Float] -> Float
     def _adjust (val, operator, tweak = 0.001):
+        '''
+        Pass in `operator.__add__`
+        or `operator.__sub__`
+        to move `val` up or down by `tweak`.
+        '''
         return operator(val, (val*tweak))
+
 
     # TODO Immediate or cancel....then recursive
     #
