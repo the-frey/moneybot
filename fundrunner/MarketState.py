@@ -30,12 +30,26 @@ class MarketState (object):
     Public methods
     '''
 
+    # String -> Float
     def balance (self, coin):
+        '''
+        Returns the quantity of a coin held.
+        '''
         return self.balances[coin]
 
+
+    # String -> Float
+    def price (self, market,
+               key='weightedAverage'):
+        '''
+        Returns the price of a market, in terms of the base asset.
+        '''
+        return float(self.chart_data[market][key])
+
+
+    # String -> Bool
     def only_holding (self, coin):
         return self._held_coins() == [ coin ]
-
 
     # MarketState -> Set<String>
     def available_coins (self):
@@ -49,8 +63,7 @@ class MarketState (object):
         return set(self._held_coins()).intersection(avail_coins)
 
 
-    def estimate_values (self,
-                         key='weightedAverage'):
+    def estimate_values (self, **kwargs):
         '''
         Returns a dict where keys are coin names,
         and values are the value of our holdings in fiat.
@@ -63,7 +76,7 @@ class MarketState (object):
                     fiat_values[coin] = amount_held
                 else:
                     relevant_market = '{!s}_{!s}'.format(self.fiat, coin)
-                    fiat_price = float(self.chart_data[relevant_market][key])
+                    fiat_price = self.price(relevant_market, **kwargs)
                     fiat_values[coin] =  fiat_price * amount_held
             except KeyError:
                 # Remove the coin -- it has been delisted.
@@ -73,8 +86,12 @@ class MarketState (object):
         return fiat_values
 
 
-    def estimate_total_value (self):
-        return sum(self.estimate_values().values())
+    def estimate_total_value (self, **kwargs):
+        return sum(self.estimate_values(**kwargs).values())
+
+    def estimate_total_value_usd (self, **kwargs):
+        est = self.estimate_total_value() * self.chart_data['USD_BTC']['weightedAverage']
+        return round(est, 2)
 
 
     # TODO Not sure this method should even exist.

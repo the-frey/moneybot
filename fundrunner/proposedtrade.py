@@ -57,11 +57,11 @@ class ProposedTrade (object):
 
 
     # ChartData -> Float
-    def estimate_price (self, chart_data):
+    def estimate_price (self, market_state):
         '''
         Returns the approximate price of the quote value, given some chart data.
         '''
-        base_price = float(chart_data[self.market_name]['weightedAverage'])
+        base_price = market_state.price(self.market_name)
         if self.to_coin == self.fiat:
             self.price = (1 / base_price)
         else:
@@ -84,7 +84,7 @@ class ProposedTrade (object):
         else:
             self.bid_amount = amount
 
-        self = self.estimate_price(market_state.chart_data)
+        self = self.estimate_price(market_state)
         self.ask_amount = self._purchase_amount(amount, self.price)
 
         return self
@@ -94,7 +94,7 @@ class ProposedTrade (object):
         '''
         TODO Docstring
         '''
-        self = self.estimate_price(market_state.chart_data)
+        self = self.estimate_price(market_state)
         if not self.price:
             print('ERROR: Must set a price for ProposedTrade, or pass a chart object into estimate_price_with')
             raise

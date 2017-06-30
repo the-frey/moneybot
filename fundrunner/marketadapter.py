@@ -3,12 +3,13 @@ import pandas as pd
 class MarketAdapter (object):
 
 
-    def __init__ (self, config):
-        self.balances = config['backtesting']['initial_balances']
-
-
     def get_balances (self):
-        return self.balances
+        raise NotImplementedError
+
+
+    def execute (self, proposed_trades, market_state):
+        raise NotImplementedError
+
 
     # self, ProposedTrade, MarketState -> Bool
     def is_legal (self, proposed, market_state):
@@ -54,13 +55,18 @@ class MarketAdapter (object):
                 yield proposed
 
 
-    # List<ProposedTrade> -> Float
+
+class BacktestMarketAdapter (MarketAdapter):
+
+    def __init__ (self, config):
+        self.balances = config['backtesting']['initial_balances']
+
+
+    def get_balances (self):
+        return self.balances
+
+
     def execute (self, proposed_trades, market_state):
-        '''
-        Executes proposed trades,
-        returns value of the fund after all trades have been executed
-        in USD.
-        '''
         # The user's propose_trades() method could be returning anything,
         # we don't trust it necessarily. So, we have our MarketAdapter
         # assure that all the trades are legal, by the market's rules.

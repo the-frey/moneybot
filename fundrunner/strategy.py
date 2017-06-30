@@ -11,8 +11,8 @@ from time import sleep
 
 class Strategy (object):
 
-    def __init__ (self, config,
-                  market=None, fiat='BTC'):
+    def __init__ (self, MarketAdapter, config,
+                  fiat='BTC'):
         self.config = config
         self.fiat = fiat
         # MarketHistory stores historical market data
@@ -21,7 +21,7 @@ class Strategy (object):
         self.trade_interval = config['trade_interval']
         # This is set internally at runtime
         # TODO Better place for this? Where to pass this in?
-        self.MarketAdapter = None
+        self.MarketAdapter = MarketAdapter(self.config)
 
 
     def step (self, time):
@@ -42,7 +42,7 @@ class Strategy (object):
         self.MarketAdapter.execute(proposed_trades, market_state)
         # Finally, we get the USD value of our whole fund,
         # after all trades have been executed
-        usd_value = self.MarketHistory.usd_value(market_state)
+        usd_value = market_state.estimate_total_value_usd() 
         return usd_value
 
 
@@ -51,7 +51,6 @@ class Strategy (object):
     #     # self.market = PoloniexMarket(self.config['livetrading']['poloniex']['pk'],
     #     #                              self.config['livetrading']['poloniex']['sk'])
     #     # TODO self.coinstore = LiveCoinStore(self.client, self.market)
-    #     self.MarketAdapter = MarketAdapter(config)
     #     while True:
     #         cur_time = datetime.now()
     #         print('Trading', cur_time)
@@ -72,7 +71,6 @@ class Strategy (object):
         '''
         # MarketAdapter executes trades
         # Set up the historical coinstore
-        self.MarketAdapter = MarketAdapter(self.config)
         # A series of trade-times to run each of our strategies through.
         dates = pd.date_range(pd.Timestamp(start_time),
                               pd.Timestamp(end_time),
