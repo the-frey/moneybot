@@ -2,6 +2,14 @@ import pandas as pd
 
 class MarketAdapter (object):
 
+
+    def __init__ (self, config):
+        self.balances = config['backtesting']['initial_balances']
+
+
+    def get_balances (self):
+        return self.balances
+
     # self, ProposedTrade, MarketState -> Bool
     def is_legal (self, proposed, market_state):
 
@@ -60,7 +68,7 @@ class MarketAdapter (object):
         legal_trades = self.filter_legal(proposed_trades, market_state)
         # Now, we will actually execute the trades.
         balances = market_state.simulate_trades(legal_trades)
-        return balances
+        self.balances = balances
 
 
     # TODO 

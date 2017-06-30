@@ -1,4 +1,4 @@
-from ..strategy import Strategy
+from ..Strategy import Strategy
 
 class BuyHoldStrategy(Strategy):
   def propose_trades (self, market_state):

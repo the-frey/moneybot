@@ -2,30 +2,35 @@ from .buffedcoinstrategy import BuffedCoinStrategy
 import numpy as np
 import pandas as pd
 
-# PandasSeries -> (PandasSeries, PandasSeries)
-def emas (price_series, shortw=96, longw=2400, **kwargs):
-    long_ema  = price_series.ewm(com=longw).mean()
-    short_ema = price_series.ewm(com=shortw).mean()
-    return long_ema, short_ema
-
-def percentage_price_oscillator (price_series, **kwargs):
-    longe, shorte = emas(price_series, **kwargs)
-    ppo           = (shorte - longe) / longe
-    return ppo
-
-# PandasSeries -> PandasSeries
-def ppo_histogram (price_series, **kwargs):
-    ppo           = percentage_price_oscillator(price_series)
-    ppo_ema       = ppo.ewm(com=9).mean()
-    ppo_hist      = pd.DataFrame(ppo - ppo_ema)
-    return ppo_hist
-
-def latest_ppo_hist (price_series):
-    ppo_hist = ppo_histogram(price_series)
-    latest   = ppo_hist.iloc[-1].values[0]
-    return latest
 
 class PeakRiderStrategy (BuffedCoinStrategy):
+
+    # PandasSeries -> (PandasSeries, PandasSeries)
+    def emas (self, price_series, shortw=96, longw=2400, **kwargs):
+        long_ema  = price_series.ewm(com=longw).mean()
+        short_ema = price_series.ewm(com=shortw).mean()
+        return long_ema, short_ema
+
+
+    def percentage_price_oscillator (self, price_series, **kwargs):
+        longe, shorte = self.emas(price_series, **kwargs)
+        ppo           = (shorte - longe) / longe
+        return ppo
+
+
+    # PandasSeries -> PandasSeries
+    def ppo_histogram (self, price_series, **kwargs):
+        ppo           = self.percentage_price_oscillator(price_series)
+        ppo_ema       = ppo.ewm(com=9).mean()
+        ppo_hist      = pd.DataFrame(ppo - ppo_ema)
+        return ppo_hist
+
+
+    def latest_ppo_hist (self, price_series):
+        ppo_hist = self.ppo_histogram(price_series)
+        latest   = ppo_hist.iloc[-1].values[0]
+        return latest
+
 
     def is_buffed (self, coin, coin_values):
         # HACK HACK HACK HACK HACK
@@ -48,7 +53,7 @@ class PeakRiderStrategy (BuffedCoinStrategy):
             prices = self.MarketHistory.asset_history(time, 'USD', self.fiat)
         else:
             prices = self.MarketHistory.asset_history(time, self.fiat, coin)
-            latest = latest_ppo_hist(prices)
+            latest = self.latest_ppo_hist(prices)
             if latest > 0:
                 return True
             return False
