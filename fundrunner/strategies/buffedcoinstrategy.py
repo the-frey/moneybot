@@ -1,4 +1,4 @@
-from ..Strategy import Strategy
+from . import Strategy
 import numpy as np
 
 
