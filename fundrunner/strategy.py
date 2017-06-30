@@ -4,7 +4,6 @@ from .ProposedTrade import ProposedTrade
 from .MarketHistory import MarketHistory
 from .MarketAdapter import MarketAdapter#, LiveMarketAdapter
 from .MarketState import MarketState
-from .balances import Balances
 from datetime import datetime
 from time import sleep
 
@@ -52,8 +51,7 @@ class Strategy (object):
         #                              self.config['livetrading']['poloniex']['sk'])
         # TODO self.coinstore = LiveCoinStore(self.client, self.market)
         initial_balances = self.market.get_balances()
-        # TODO Does Balances need to be here?
-        self.balances = Balances(initial_balances)
+        self.balances = initial_balances
         while True:
             cur_time = datetime.now()
             print('Trading', cur_time)
@@ -77,8 +75,7 @@ class Strategy (object):
         self.MarketAdapter = MarketAdapter()
         # And get our initial balances
         initial_balances = self.config['backtesting']['initial_balances']
-        # TODO Does Balances need to be here?
-        self.balances = Balances(initial_balances)
+        self.balances = initial_balances
         # A series of trade-times to run each of our strategies through.
         dates = pd.date_range(pd.Timestamp(start_time),
                               pd.Timestamp(end_time),

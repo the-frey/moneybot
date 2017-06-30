@@ -79,8 +79,8 @@ class ProposedTrade (object):
         When `self.estimate_price_with` is passed a `chart` object,
         it will pass this down to `estimate_price()`.
         '''
-        if amount > market_state.balances.balances[self.from_coin]:
-            self.bid_amount = market_state.balances.balances[self.from_coin]
+        if amount > market_state.balance(self.from_coin):
+            self.bid_amount = market_state.balance(self.from_coin)
         else:
             self.bid_amount = amount
 
@@ -101,9 +101,7 @@ class ProposedTrade (object):
         # After rebalance, we want the value of the coin we're trading to
         # to be equal to the ideal value (in fiat).
         # First we'll find the value of the coin we currently hold.
-        # TODO balances.balances ?????
-        # TODO That's a confusing-ass name
-        current_value = (market_state.balances.balances[self.from_coin] * self.price)
+        current_value = (market_state.balance(self.from_coin) * self.price)
         # To find how much coin we want to sell,
         # we'll subtract our holding's value from the ideal value
         # to produce the value of coin we must sell
