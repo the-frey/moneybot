@@ -3,7 +3,7 @@ from poloniex import Poloniex
 from time import sleep
 import operator
 
-def LiveMarketAdapter (PoloniexMarketAdapter):
+class LiveMarketAdapter (PoloniexMarketAdapter):
 
     def __init__ (self, config):
         self.polo = Poloniex(self.config['livetrading']['poloniex']['pk'],
@@ -41,71 +41,62 @@ def LiveMarketAdapter (PoloniexMarketAdapter):
         return operator(val, (val*tweak))
 
 
-    # TODO Immediate or cancel....then recursive
-    #
-    #     otherwise too much crazy shit
-    #      - orders might be partially fulfilled,
-    #      - we don't know which order we're cancelling
-    #      - need to do 3 separate API calls before re-placing order
-    #     etc..
-    #
-    # ProposedTrade -> ProposedTrade or None
-    def _place_order (self, proposed_trade, market_state):
+    # Float -> Float
+    def _adjust_up (self, val, **kwargs):
+        return _adjust(val, operator.__add__, **kwargs)
 
-        # polo.buy
+
+    # Float -> Float
+    def _adjust_down (self, val, **kwargs):
+        return _adjust(val, operator.__sub__, **kwargs)
+
+
+    def _purchase_helper (self, market, price, amount, purchase_fn, adjust_fn):
+        try:
+            res = purchase_fn(
+                market,
+                price,
+                amount,
+                # Cancel order if not fulfilled in entirity at this price
+                orderType = 'fillOrKill')
+        # If we can't fill the order at this price,
+        except:
+            # recursively again at a (higher / lower) price
+            return _purchase_helper(
+                market,
+                adjust_fn(price),
+                amount,
+                purchase_fn,
+                adjust_fn
+            )
+        return res
+
+
+    # ProposedTrade -> Response
+    def _place_order (proposed_trade, market_state):
+
+        # if we're trading FROM fiat, that's a "sell"
         if proposed_trade.from_coin == market_state.fiat:
-            res = self.polo.buy(
+            return _purchase_helper(
                 proposed_trade.market_name,
                 proposed_trade.market_price,
-                proposed_trade.ask_amount
+                proposed_trade.ask_amount,
+                polo.buy,
+                # We try to buy low,
+                # But don't always get to,
+                # so we adjust up if we must.
+                _adjust_up,
             )
 
-        # polo.sell
+        # if we're trading TO fiat, that's a "sell"
         elif proposed_trade.to_coin == market_state.fiat:
-            res = self.polo.sell(
+            return _purchase_helper(
                 proposed_trade.market_name,
                 proposed_trade.market_price,
-                proposed_trade.bid_amount
+                proposed_trade.ask_amount,
+                polo.sell,
+                # We try to sell high,
+                # But don't always get to,
+                # so we adjust down if we must.
+                _adjust_down,
             )
-
-        # # Wait, then see if any orders still open
-        # sleep(1)
-        # _, coin_pairs = self.cancel_open_orders()
-        # # if we canceled some order
-        # if coin_pairs is not None:
-        #     # Lower bid
-        #     if proposed_trade.from_coin == market_state.fiat:
-        #         proposed.bi
-        #         purchaseList[3] = purchaseList[3] - purchaseList[3] * 0.001
-        #     # Increase bid
-        #     elif purchaseList[2] == fiat:
-        #         purchaseList[1] = purchaseList[1] + purchaseList[1] * 0.001
-        #     newPurchase = Purchase(purchaseList[0], purchaseList[1], purchaseList[2], purchaseList[3])
-        #     # Recursively make_purchase
-        #     return self.make_purchase(newPurchase)
-
-    # # -> List<Int>, List<String>
-    # def _open_orders(self):
-    #     '''
-    #     Private method.
-    #     Returns all orders open on Polo,
-    #     by order number and by what coin was cancelled.
-    #     '''
-    #     open_orders = self.polo.returnOpenOrders()
-    #     open_order_nums = [v[0]['orderNumber'] for v in open_orders.values() if len(v)]
-    #     coins_to_try_again = [coin for coin, v in open_orders.items() if len(v)]
-    #     return open_order_nums, coins_to_try_again
-
-
-    # def _cancel_open_orders(self):
-    #     '''
-    #     Private method.
-    #     Cancels all open orders open on Polo.
-    #     '''
-    #     open_order_ids, open_order_coins = self.open_orders()
-    #     if len(open_order_ids) > 0:
-    #         # cancel open orders
-    #         print('INFO: canceling orders', open_order_coins)
-    #         [self.polo.cancelOrder(order) for order in open_order_ids]
-    #         return open_order_ids, open_order_coins
-    #     return None, None
