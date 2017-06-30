@@ -73,30 +73,30 @@ class LiveMarketAdapter (MarketAdapter):
 
 
     # ProposedTrade -> Response
-    def _place_order (proposed_trade, market_state):
+    def _place_order (self, proposed_trade, market_state):
 
         # if we're trading FROM fiat, that's a "sell"
         if proposed_trade.from_coin == market_state.fiat:
-            return _purchase_helper(
+            return self._purchase_helper(
                 proposed_trade.market_name,
                 proposed_trade.market_price,
                 proposed_trade.ask_amount,
-                polo.buy,
+                self.polo.buy,
                 # We try to buy low,
                 # But don't always get to,
                 # so we adjust up if we must.
-                _adjust_up,
+                self._adjust_up,
             )
 
         # if we're trading TO fiat, that's a "sell"
         elif proposed_trade.to_coin == market_state.fiat:
-            return _purchase_helper(
+            return self._purchase_helper(
                 proposed_trade.market_name,
                 proposed_trade.market_price,
                 proposed_trade.ask_amount,
-                polo.sell,
+                self.polo.sell,
                 # We try to sell high,
                 # But don't always get to,
                 # so we adjust down if we must.
-                _adjust_down,
+                self._adjust_down,
             )
