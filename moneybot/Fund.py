@@ -52,15 +52,25 @@ class Fund (object):
 
 
     def run_live (self):
+        starttime=time.time()
+        PERIOD = self.Strategy.trade_interval
         while True:
-            # TODO Backfill historical data using the scraper!
+            # Get time loop starts, so
+            # we can account for the time
+            # that the step took to run
             cur_time = datetime.now()
-            print('Trading', cur_time)
+            # Before anything,
+            # scrape poloniex
+            # to make sure we have freshest data
+            self.MarketHistory.scrape_latest()
+            # Now the fund can step()
+            print('Fund.step({!s})'.format(cur_time))
             usd_val = self.step(cur_time)
+            # After its step, we have got the USD value.
             print('Est. USD value', usd_val)
-            # TODO Count the time that the step took to run
-            #      see poloniex-index-fund-bot for how this is done
-            sleep(self.Strategy.trade_interval)
+            # Wait until our next time to run,
+            # Accounting for the time that this step took to run
+            time.sleep(PERIOD - ((time.time() - starttime) % PERIOD))
 
 
     # self, str, str => List<Float>
