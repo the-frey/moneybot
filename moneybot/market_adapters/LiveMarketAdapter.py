@@ -62,7 +62,7 @@ class LiveMarketAdapter (MarketAdapter):
         # If we can't fill the order at this price,
         except:
             # recursively again at a (higher / lower) price
-            return _purchase_helper(
+            return self._purchase_helper(
                 market,
                 adjust_fn(price),
                 amount,
