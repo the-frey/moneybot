@@ -138,7 +138,7 @@ class Strategy (object):
         # Next, we will simulate actually executing all of these trades
         # Afterward, we'll get some simulated balances
         # TODO apply_purchaess should really be some kind of Simulate or whatever in a market adapter
-        est_bals_after_fiat_trades = market_state.balances.apply_purchases(proposed_trades_to_fiat)
+        est_bals_after_fiat_trades = market_state.simulate_trades(proposed_trades_to_fiat)
 
         if self.fiat in coins_to_rebalance and len(proposed_trades_to_fiat) > 0:
             fiat_after_trades        = est_bals_after_fiat_trades[self.fiat]

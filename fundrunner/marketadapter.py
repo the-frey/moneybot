@@ -2,10 +2,6 @@ import pandas as pd
 
 class MarketAdapter (object):
 
-    # def __init__ (self):
-        # self.client = influx_client
-
-
     # self, ProposedTrade, MarketState -> Bool
     def is_legal (self, proposed, market_state):
 
@@ -63,7 +59,7 @@ class MarketAdapter (object):
         # TODO Can the Strategy get access to this sanity checker?
         legal_trades = self.filter_legal(proposed_trades, market_state)
         # Now, we will actually execute the trades.
-        balances = market_state.balances.apply_purchases(legal_trades)
+        balances = market_state.simulate_trades(legal_trades)
         return balances
 
 
