@@ -1,8 +1,8 @@
-from .EqualWeightIndexFund import EqualWeightIndexFund
+from ..Strategy import Strategy
 import numpy as np
 
 
-class BuffedCoinStrategy (EqualWeightIndexFund):
+class BuffedCoinStrategy (Strategy):
 
     def median (self, est_values):
         return np.median(list(est_values.values()))

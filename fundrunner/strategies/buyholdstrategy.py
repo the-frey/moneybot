@@ -1,6 +1,6 @@
-from .EqualWeightIndexFund import EqualWeightIndexFund
+from ..Strategy import Strategy
 
-class BuyHoldStrategy (EqualWeightIndexFund):
+class BuyHoldStrategy (Strategy):
 
   def propose_trades (self, market_state):
 

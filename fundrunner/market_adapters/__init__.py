@@ -6,9 +6,6 @@ class MarketAdapter (object):
     def execute (self, proposed_trades, market_state):
         raise NotImplementedError
 
-    def is_legal (self, proposed, market_state):
-        raise NotImplementedError
-
     # self, List<ProposedTrade>, MarketState -> Generator<ProposedTrade>
     def filter_legal (self, proposed_trades, market_state):
         '''
@@ -19,11 +16,11 @@ class MarketAdapter (object):
             if self.is_legal(proposed, market_state):
                 yield proposed
 
-
-class PoloniexMarketAdapter (MarketAdapter):
-
     # self, ProposedTrade, MarketState -> Bool
     def is_legal (self, proposed, market_state):
+
+        # TODO This is pretty Poloniex specific, so we might move it
+        #      to a PoloniexMarketAdapter if we ever add more exchanges.
 
         # Check that proposed bid has a price:
         if not proposed.price:

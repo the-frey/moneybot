@@ -4,11 +4,13 @@ Feel free to reorganize or make suggestions based on what you think is priority 
 
 ## refactor
 
-* Create a LiveMarketAdapter and a BacktestMarketAdapter
-  * Possibly live in different files
+* Break apart Strategy and Fund
 
-* Bring in the scraper
-    * Should auto- backfill when trading live.
+* Create a LiveMarketAdapter and a BacktestMarketAdapter
+  * jupyter notebook play with immediateOrCancel
+
+* Integrate the scraper
+    * Should auto-backfill when trading live.
 
 * Optional but nice
     * Asset blacklist in config - backtest that!

@@ -1,4 +1,4 @@
-from .PoloniexMarketAdapter import PoloniexMarketAdapter
+from . import MarketAdapter
 from poloniex import Poloniex
 from time import sleep
 import operator

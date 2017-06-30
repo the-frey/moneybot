@@ -1,6 +1,6 @@
-from .PoloniexMarketAdapter import PoloniexMarketAdapter
+from . import MarketAdapter
 
-class BacktestMarketAdapter (PoloniexMarketAdapter):
+class BacktestMarketAdapter (MarketAdapter):
 
     def __init__ (self, config):
         self.balances = config['backtesting']['initial_balances']
