@@ -11,6 +11,7 @@ Feel free to reorganize or make suggestions based on what you think is priority 
     * Should auto- backfill when trading live.
 
 * Optional but nice
+    * Asset blacklist in config - backtest that!
     * Replace with proper logging everywhere
     * Strategy shouldn't have access to MarketAdapter.execute()
 
