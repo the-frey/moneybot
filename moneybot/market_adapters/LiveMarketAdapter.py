@@ -32,7 +32,7 @@ class LiveMarketAdapter (MarketAdapter):
     '''
 
     # Float, Method, [Float] -> Float
-    def _adjust (val, operator, tweak = 0.001):
+    def _adjust (self, val, operator, tweak = 0.001):
         '''
         Pass in `operator.__add__`
         or `operator.__sub__`
@@ -62,9 +62,10 @@ class LiveMarketAdapter (MarketAdapter):
         # If we can't fill the order at this price,
         except:
             # recursively again at a (higher / lower) price
+            adjusted_price = adjust_fn(price)
             return self._purchase_helper(
                 market,
-                adjust_fn(price),
+                adjusted_price,
                 amount,
                 purchase_fn,
                 adjust_fn
