@@ -1,7 +1,7 @@
 from .MarketHistory import MarketHistory
 from .MarketState import MarketState
 from datetime import datetime
-from time import sleep
+from time import sleep, time
 import pandas as pd
 
 
@@ -52,7 +52,7 @@ class Fund (object):
 
 
     def run_live (self):
-        starttime=time.time()
+        starttime=time()
         PERIOD = self.Strategy.trade_interval
         while True:
             # Get time loop starts, so
@@ -70,7 +70,7 @@ class Fund (object):
             print('Est. USD value', usd_val)
             # Wait until our next time to run,
             # Accounting for the time that this step took to run
-            time.sleep(PERIOD - ((time.time() - starttime) % PERIOD))
+            sleep(PERIOD - ((time() - starttime) % PERIOD))
 
 
     # self, str, str => List<Float>

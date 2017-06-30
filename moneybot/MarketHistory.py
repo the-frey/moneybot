@@ -3,6 +3,7 @@ from influxdb import InfluxDBClient
 from poloniex import Poloniex
 import time
 from datetime import datetime
+from dateutil import parser
 from funcy import compose, partial
 import requests
 import json
