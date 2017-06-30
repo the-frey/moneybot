@@ -3,11 +3,11 @@ from poloniex import Poloniex
 from time import sleep
 import operator
 
-class LiveMarketAdapter (PoloniexMarketAdapter):
+class LiveMarketAdapter (MarketAdapter):
 
     def __init__ (self, config):
-        self.polo = Poloniex(self.config['livetrading']['poloniex']['pk'],
-                             self.config['livetrading']['poloniex']['sk'])
+        self.polo = Poloniex(config['livetrading']['poloniex']['pk'],
+                             config['livetrading']['poloniex']['sk'])
         self.balances = self.get_balances()
 
 
