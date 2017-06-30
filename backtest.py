@@ -1,4 +1,5 @@
 import json
+from fundrunner.Fund import Fund
 from fundrunner.market_adapters.BacktestMarketAdapter import BacktestMarketAdapter
 from fundrunner.strategies.BuyHoldStrategy import BuyHoldStrategy
 from fundrunner.strategies.BuffedCoinStrategy import BuffedCoinStrategy
@@ -10,7 +11,7 @@ with open('config.json.example') as cfg_file:
 	config = json.load(cfg_file)
 
 # Try BuyHoldStrategy or BuffedCoinStrategy too
-strat = BuffedCoinStrategy(BacktestMarketAdapter, config)
+strat = Fund(BuffedCoinStrategy, BacktestMarketAdapter, config)
 
 summary = evaluate(strat,
                    '2017-01-01', '2017-06-29',
