@@ -1,46 +1,12 @@
 import pandas as pd
 from influxdb import InfluxDBClient
-from .proposedtrade import ProposedTrade
+from .ProposedTrade import ProposedTrade
 from .MarketHistory import MarketHistory
-from .marketadapter import MarketAdapter#, LiveMarketAdapter
+from .MarketAdapter import MarketAdapter#, LiveMarketAdapter
+from .MarketState import MarketState
 from .balances import Balances
 from datetime import datetime
 from time import sleep
-
-
-class MarketState (object):
-
-    def __init__ (self, chart_data, balances, time):
-        self.chart_data = chart_data
-        self.balances = balances
-        self.time = time
-
-    def only_holding (self, coin):
-        return self.balances.held_coins() == [ coin ]
-
-    def coin_names (self, market_name):
-        coins = market_name.split('_')
-        return coins[0], coins[1]
-
-    def available_markets (self, fiat):
-        return set([ k for k in self.chart_data.keys()
-                     if k.startswith(fiat) ])
-
-    # MarketState -> Set<String>
-    def available_coins (self, fiat):
-        markets = self.available_markets(fiat)
-        return set([ self.coin_names(market)[1]
-                     for market in markets ] + [ fiat ])
-
-    def held_coins_with_chart_data (self, fiat):
-        avail_coins = self.available_coins(fiat)
-        return set(self.balances.held_coins()).intersection(avail_coins)
-
-    def estimate_total_value (self):
-        return self.balances.estimate_total_fiat_value(self.chart_data)
-
-    def estimate_values (self):
-        return self.balances.estimate_values(self.chart_data)
 
 
 
@@ -65,7 +31,7 @@ class Strategy (object):
         # Now, propose trades. If you're writing a strategy, you will override this method.
         # TODO self.balances is coming out of nowhere.
         #      Can't it get passed into `step()`?
-        market_state = MarketState(charts, self.balances, time)
+        market_state = MarketState(charts, self.balances, time, self.fiat)
         proposed_trades = self.propose_trades(market_state)
         # Finally, the MarketAdapter will execute our trades.
         # If we're backtesting, these trades won't really happen.
@@ -122,13 +88,6 @@ class Strategy (object):
             yield val
 
 
-
-    '''
-    Convenience functions
-    '''
-
-
-
     '''
     Rebalancing tools
     '''
@@ -140,7 +99,7 @@ class Strategy (object):
         The resulting proposed trades should result in an equal allocation (of value, in fiat)
         across all "reachable" markets (markets in which the base currency is fiat).
         '''
-        available_coins = market_state.available_coins(self.fiat) - set([ self.fiat ])
+        available_coins = market_state.available_coins() - set([ self.fiat ])
         fiat_investment_per_coin = market_state.balances[self.fiat] / ( len(available_coins) + 1.0 )
         trades = self.propose_trades_from_fiat(available_coins, fiat_investment_per_coin, market_state)
         return trades
@@ -168,7 +127,7 @@ class Strategy (object):
 
     def rebalancing_proposed_trades (self, coins_to_rebalance, market_state):
 
-        available_coins = market_state.available_coins(self.fiat) - set([ self.fiat ])
+        available_coins = market_state.available_coins() - set([ self.fiat ])
         total_value = market_state.estimate_total_value() 
         ideal_fiat_value_per_coin = total_value / len(available_coins) # TODO maybe +1? like above?
 
