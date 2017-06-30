@@ -6,6 +6,10 @@ Feel free to reorganize or make suggestions based on what you think is priority 
 
 * Create a LiveMarketAdapter and a BacktestMarketAdapter
   * Possibly live in different files
+  
+## backtest
+
+* Blacklist for coins
 
 ## live-trading
 
