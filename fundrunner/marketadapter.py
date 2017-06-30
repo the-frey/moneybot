@@ -6,11 +6,11 @@ class MarketAdapter (object):
         # self.client = influx_client
 
 
-    # self, ProposedTrade, Chart_Data -> Bool
-    def is_legal (self, proposed, chart_data, balances):
+    # self, ProposedTrade, MarketState -> Bool
+    def is_legal (self, proposed, market_state):
 
         # Check that we have enough to sell
-        if proposed.bid_amount > balances[proposed.from_coin]:
+        if proposed.bid_amount > market_state.balances[proposed.from_coin]:
             print('WARN: Filtering out proposed trade: proposing to sell more than is held. Proposed',
                   str(proposed), 'but holding', balances[proposed.from_coin], proposed.from_coin)
             return False
@@ -32,26 +32,26 @@ class MarketAdapter (object):
             return False
 
         # Check that the trade is on a market that exists.
-        if proposed.market_name not in chart_data.keys():
+        if proposed.market_name not in market_state.chart_data.keys():
             print('WARN: Filtering out proposed trade: market name not in chart_data. Proposed',
                   str(proposed))
             return False
 
         return True
 
-    # self, List<ProposedTrade>, Chart_Data -> Generator<ProposedTrade>
-    def filter_legal (self, proposed_trades, chart_data, balances):
+    # self, List<ProposedTrade>, MarketState -> Generator<ProposedTrade>
+    def filter_legal (self, proposed_trades, market_state):
         '''
         Takes a list of ProposedTrade objects.
         Checks that each is a legal trade by the rules of our market.
         '''
         for proposed in proposed_trades:
-            if self.is_legal(proposed, chart_data, balances):
+            if self.is_legal(proposed, market_state):
                 yield proposed
 
 
     # List<ProposedTrade> -> Float
-    def execute (self, proposed_trades, chart_data, balances):
+    def execute (self, proposed_trades, market_state):
         '''
         Executes proposed trades,
         returns value of the fund after all trades have been executed
@@ -61,9 +61,9 @@ class MarketAdapter (object):
         # we don't trust it necessarily. So, we have our MarketAdapter
         # assure that all the trades are legal, by the market's rules.
         # TODO Can the Strategy get access to this sanity checker?
-        legal_trades = self.filter_legal(proposed_trades, chart_data, balances)
+        legal_trades = self.filter_legal(proposed_trades, market_state)
         # Now, we will actually execute the trades.
-        balances = balances.apply_purchases(legal_trades)
+        balances = market_state.balances.apply_purchases(legal_trades)
         return balances
 
 

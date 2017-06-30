@@ -21,9 +21,9 @@ class BuffedCoinStrategy (Strategy):
 
     def find_buffed_coins (self, market_state):
         # if we hold other stuff,
-        est_values = market_state.balances.estimate_values(market_state.chart_data)
+        est_values = market_state.estimate_values()
         buffed_coins = [
-            coin for coin in self.held_coins_with_chart_data(market_state)
+            coin for coin in market_state.held_coins_with_chart_data(self.fiat)
             if self.is_buffed(coin, est_values)
         ]
         return buffed_coins

@@ -52,9 +52,9 @@ class MarketHistory (object):
 
 
     # PandasTimestamp, Balances, Charts -> Float
-    def usd_value (self, time, balances, charts):
-        btc_value     = balances.estimate_total_fiat_value(charts)
-        btc_usd_rate  = self.btc_rate(time)
+    def usd_value (self, market_state):
+        btc_value     = market_state.estimate_total_value()
+        btc_usd_rate  = self.btc_rate(market_state.time)
         usd_value     = btc_value * btc_usd_rate
         return round(usd_value, 2)
 

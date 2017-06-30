@@ -32,6 +32,15 @@ class MarketState (object):
         return set([ self.coin_names(market)[1]
                      for market in markets ] + [ fiat ])
 
+    def held_coins_with_chart_data (self, fiat):
+        avail_coins = self.available_coins(fiat)
+        return set(self.balances.held_coins()).intersection(avail_coins)
+
+    def estimate_total_value (self):
+        return self.balances.estimate_total_fiat_value(self.chart_data)
+
+    def estimate_values (self):
+        return self.balances.estimate_values(self.chart_data)
 
 
 
@@ -65,9 +74,9 @@ class Strategy (object):
         # In either case, the method returns the balances of all assets,
         # and the USD value of our whole fund,
         # after all trades have been executed
-        self.balances = self.MarketAdapter.execute(proposed_trades, charts, self.balances)
+        self.balances = self.MarketAdapter.execute(proposed_trades, market_state)
         # # TODO MarketHistory and Balances are tightly coupled here
-        usd_value = self.MarketHistory.usd_value(time, self.balances, charts)
+        usd_value = self.MarketHistory.usd_value(market_state)
         return usd_value
 
 
@@ -119,11 +128,6 @@ class Strategy (object):
     '''
 
 
-    # TODO This feels like MarketAdapter work
-    def held_coins_with_chart_data (self, market_state):
-        avail_coins = market_state.available_coins(self.fiat)
-        return set(market_state.balances.held_coins()).intersection(avail_coins)
-
 
     '''
     Rebalancing tools
@@ -138,13 +142,11 @@ class Strategy (object):
         '''
         available_coins = market_state.available_coins(self.fiat) - set([ self.fiat ])
         fiat_investment_per_coin = market_state.balances[self.fiat] / ( len(available_coins) + 1.0 )
-        trades = self.propose_trades_from_fiat(available_coins, fiat_investment_per_coin,
-                                               market_state)
+        trades = self.propose_trades_from_fiat(available_coins, fiat_investment_per_coin, market_state)
         return trades
 
 
-    def propose_trades_to_fiat (self, coins, ideal_fiat_value_per_coin,
-                                market_state):
+    def propose_trades_to_fiat (self, coins, ideal_fiat_value_per_coin, market_state):
         for coin in coins:
             if coin != self.fiat:
                 # Sell `coin` for `fiat`,
@@ -157,19 +159,17 @@ class Strategy (object):
                     yield proposed
 
 
-    def propose_trades_from_fiat (self, coins, investment_per_coin,
-                                  market_state):
+    def propose_trades_from_fiat (self, coins, investment_per_coin, market_state):
         for coin in coins:
             proposed = ProposedTrade(self.fiat, coin) \
-                       .set_bid_amount(investment_per_coin,
-                                       market_state)
+                       .set_bid_amount(investment_per_coin, market_state)
             yield proposed
 
 
     def rebalancing_proposed_trades (self, coins_to_rebalance, market_state):
 
         available_coins = market_state.available_coins(self.fiat) - set([ self.fiat ])
-        total_value = market_state.balances.estimate_total_fiat_value(market_state.chart_data)
+        total_value = market_state.estimate_total_value() 
         ideal_fiat_value_per_coin = total_value / len(available_coins) # TODO maybe +1? like above?
 
         proposed_trades_to_fiat = list(self.propose_trades_to_fiat(coins_to_rebalance,
@@ -184,13 +184,10 @@ class Strategy (object):
         if self.fiat in coins_to_rebalance and len(proposed_trades_to_fiat) > 0:
             fiat_after_trades        = est_bals_after_fiat_trades[self.fiat]
             to_redistribute          = fiat_after_trades - ideal_fiat_value_per_coin
-            coins_divested_from      = [ proposed.from_coin
-                                         for proposed in proposed_trades_to_fiat]
+            coins_divested_from      = [ proposed.from_coin for proposed in proposed_trades_to_fiat]
             coins_to_buy             = available_coins - set(coins_divested_from) - set( [self.fiat] )
             to_redistribute_per_coin = to_redistribute / len(coins_to_buy)
-            proposed_trades_from_fiat = self.propose_trades_from_fiat(coins_to_buy,
-                                                                      to_redistribute_per_coin,
-                                                                      market_state)
+            proposed_trades_from_fiat = self.propose_trades_from_fiat(coins_to_buy, to_redistribute_per_coin, market_state)
             trades = proposed_trades_to_fiat + list(proposed_trades_from_fiat)
 
             return trades
