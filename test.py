@@ -1,4 +1,5 @@
 import json
+from fundrunner.Fund import Fund
 from fundrunner.market_adapters.BacktestMarketAdapter import BacktestMarketAdapter
 from fundrunner.strategies.BuyHoldStrategy import BuyHoldStrategy
 from fundrunner.strategies.BuffedCoinStrategy import BuffedCoinStrategy
@@ -39,8 +40,11 @@ class TestFundRunner (unittest.TestCase):
             Strategies should produce their expected values
             '''
             # Try BuyHoldStrategy or BuffedCoinStrategy too
-            strat = expected['strategy'](BacktestMarketAdapter, config)
-            res = list(strat.begin_backtest(start, end))
+            fund = Fund(
+                    expected['strategy'],
+                    BacktestMarketAdapter,
+                    config)
+            res = list(fund.begin_backtest(start, end))
             # print(expected['strategy'])
             # print(res)
             # print(expected['values'])

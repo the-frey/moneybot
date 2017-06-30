@@ -28,7 +28,7 @@ class BuffedCoinStrategy (Strategy):
         return buffed_coins
 
 
-    def propose_trades (self, market_state):
+    def propose_trades (self, market_state, market_history):
 
         # First of all, if we only hold fiat,
         if market_state.only_holding(self.fiat):

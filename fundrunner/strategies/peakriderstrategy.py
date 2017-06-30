@@ -48,18 +48,18 @@ class PeakRiderStrategy (BuffedCoinStrategy):
         return False
 
 
-    def is_crashing (self, coin, time):
+    def is_crashing (self, coin, time, market_history):
         if coin == self.fiat:
-            prices = self.MarketHistory.asset_history(time, 'USD', self.fiat)
+            prices = market_history.asset_history(time, 'USD', self.fiat)
         else:
-            prices = self.MarketHistory.asset_history(time, self.fiat, coin)
+            prices = market_history.asset_history(time, self.fiat, coin)
             latest = self.latest_ppo_hist(prices)
             if latest > 0:
                 return True
             return False
 
 
-    def propose_trades (self, market_state):
+    def propose_trades (self, market_state, market_history):
         # First of all, if we only hold fiat,
         if market_state.only_holding(self.fiat):
             # Make initial trades
@@ -68,7 +68,7 @@ class PeakRiderStrategy (BuffedCoinStrategy):
         # see if any of those holdings are buffed
         buffed_coins = self.find_buffed_coins(market_state)
         buffed_and_crashing = [coin for coin in buffed_coins
-                               if self.is_crashing(coin, market_state.time) ]
+                               if self.is_crashing(coin, market_state.time, market_history) ]
         # if any of them are,
         if len(buffed_and_crashing):
             # sell them so as to reallocate their value eqaully

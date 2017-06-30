@@ -2,7 +2,7 @@ from ..Strategy import Strategy
 
 class BuyHoldStrategy (Strategy):
 
-  def propose_trades (self, market_state):
+  def propose_trades (self, market_state, market_history):
 
     # If we only have BTC,
     if market_state.only_holding(self.fiat):
