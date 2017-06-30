@@ -6,13 +6,19 @@ class MarketAdapter (object):
         # self.client = influx_client
 
 
-    # self, ProposedTrade, Charts -> Bool
-    def is_legal (self, proposed, charts):
+    # self, ProposedTrade, Chart_Data -> Bool
+    def is_legal (self, proposed, chart_data, balances):
+
+        # Check that we have enough to sell
+        if proposed.bid_amount > balances[proposed.from_coin]:
+            print('WARN: Filtering out proposed trade: proposing to sell more than is held. Proposed',
+                  str(proposed), 'but holding', balances[proposed.from_coin], proposed.from_coin)
+            return False
 
         # Check that we are trading a positive amount for a positive amount
         if proposed.bid_amount < 0 or \
            proposed.ask_amount < 0:
-            print('WARN: Filtering out proposed trade: bid/ask amounts zero or negative',
+            print('WARN: Filtering out proposed trade: bid/ask amounts zero or negative. Proposed',
                   str(proposed))
             return False
 
@@ -21,38 +27,43 @@ class MarketAdapter (object):
             proposed.bid_amount < 0.0001) or \
             (proposed.to_coin == proposed.fiat and \
              proposed.ask_amount < 0.0001):
-            print('WARN: Filtering out proposed trade: transaction too small',
+            print('WARN: Filtering out proposed trade: transaction too small. Proposed',
                   str(proposed))
             return False
 
         # Check that the trade is on a market that exists.
-        if proposed.market_name not in charts.keys():
-            print('WARN: Filtering out proposed trade: market name not in charts',
+        if proposed.market_name not in chart_data.keys():
+            print('WARN: Filtering out proposed trade: market name not in chart_data. Proposed',
                   str(proposed))
             return False
 
         return True
 
-    # self, List<ProposedTrade>, Charts -> Generator<ProposedTrade>
-    def filter_legal (self, proposed_trades, charts):
+    # self, List<ProposedTrade>, Chart_Data -> Generator<ProposedTrade>
+    def filter_legal (self, proposed_trades, chart_data, balances):
         '''
         Takes a list of ProposedTrade objects.
         Checks that each is a legal trade by the rules of our market.
         '''
         for proposed in proposed_trades:
-            if self.is_legal(proposed, charts):
+            if self.is_legal(proposed, chart_data, balances):
                 yield proposed
 
 
     # List<ProposedTrade> -> Float
-    def execute (self, proposed_trades, charts, balances, time):
+    def execute (self, proposed_trades, chart_data, balances):
         '''
         Executes proposed trades,
         returns value of the fund after all trades have been executed
         in USD.
         '''
-        # TODO BALANCES
-        balances = balances.apply_purchases(proposed_trades)
+        # The user's propose_trades() method could be returning anything,
+        # we don't trust it necessarily. So, we have our MarketAdapter
+        # assure that all the trades are legal, by the market's rules.
+        # TODO Can the Strategy get access to this sanity checker?
+        legal_trades = self.filter_legal(proposed_trades, chart_data, balances)
+        # Now, we will actually execute the trades.
+        balances = balances.apply_purchases(legal_trades)
         return balances
 
 
@@ -64,7 +75,7 @@ class MarketAdapter (object):
 #         self.client = influx_client
 
 #     # List<ProposedTrade> -> Balances
-#     def execute (self, proposed_trades, charts, balances, time):
+#     def execute (self, proposed_trades, chart_data, balances, time):
 #         # TODO Record proposed + executed trades? OR does tha thappen in market.make_purchase?
 #         # TODO executed return type?
 #         executed = [self.market.make_purchase(proposed)

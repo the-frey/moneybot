@@ -8,6 +8,33 @@ from datetime import datetime
 from time import sleep
 
 
+class MarketState (object):
+
+    def __init__ (self, chart_data, balances, time):
+        self.chart_data = chart_data
+        self.balances = balances
+        self.time = time
+
+    def only_holding (self, coin):
+        return self.balances.held_coins() == [ coin ]
+
+    def coin_names (self, market_name):
+        coins = market_name.split('_')
+        return coins[0], coins[1]
+
+    def available_markets (self, fiat):
+        return set([ k for k in self.chart_data.keys()
+                     if k.startswith(fiat) ])
+
+    # MarketState -> Set<String>
+    def available_coins (self, fiat):
+        markets = self.available_markets(fiat)
+        return set([ self.coin_names(market)[1]
+                     for market in markets ] + [ fiat ])
+
+
+
+
 class Strategy (object):
 
     def __init__ (self, config,
@@ -29,12 +56,8 @@ class Strategy (object):
         # Now, propose trades. If you're writing a strategy, you will override this method.
         # TODO self.balances is coming out of nowhere.
         #      Can't it get passed into `step()`?
-        proposed_trades = self.propose_trades(charts, self.balances, time) ####             TODO what data structure(s) can encompass all?
-        # The user's propose_trades() method could be returning anything,
-        # we don't trust it necessarily. So, we have our MarketAdapter
-        # assure that all the trades are legal, by the market's rules.
-        # TODO Can the Strategy get access to this sanity checker?
-        legal_trades = self.MarketAdapter.filter_legal(proposed_trades, charts)
+        market_state = MarketState(charts, self.balances, time)
+        proposed_trades = self.propose_trades(market_state)
         # Finally, the MarketAdapter will execute our trades.
         # If we're backtesting, these trades won't really happen.
         # If we're trading for real, we will attempt to execute the proposed trades
@@ -42,7 +65,7 @@ class Strategy (object):
         # In either case, the method returns the balances of all assets,
         # and the USD value of our whole fund,
         # after all trades have been executed
-        self.balances = self.MarketAdapter.execute(legal_trades, charts, self.balances, time)
+        self.balances = self.MarketAdapter.execute(proposed_trades, charts, self.balances)
         # # TODO MarketHistory and Balances are tightly coupled here
         usd_value = self.MarketHistory.usd_value(time, self.balances, charts)
         return usd_value
@@ -95,35 +118,33 @@ class Strategy (object):
     Convenience functions
     '''
 
-    def coin_names (self, market_name):
-        coins = market_name.split('_')
-        return coins[0], coins[1]
-
-
-    def available_markets (self, chart_data):
-        return set([ k for k in chart_data.keys()
-                     if k.startswith(self.fiat) ])
-
-
-    def available_coins (self, chart_data):
-        markets = self.available_markets(chart_data)
-        return [ self.coin_names(market)[1]
-                 for market in markets ] + [ self.fiat ]
-
 
     # TODO This feels like MarketAdapter work
-    def held_coins_with_chart_data (self, chart_data, balances,
-                                    fiat='BTC'):
-        avail_coins = self.available_coins(chart_data)
-        return set(balances.held_coins()).intersection(avail_coins)
+    def held_coins_with_chart_data (self, market_state):
+        avail_coins = market_state.available_coins(self.fiat)
+        return set(market_state.balances.held_coins()).intersection(avail_coins)
 
 
     '''
     Rebalancing tools
     '''
 
+    def initial_proposed_trades (self, market_state):
+        '''
+        "Initial" purchases are from fiat.
+        (We assume funds start with only a fiat balance.)
+        The resulting proposed trades should result in an equal allocation (of value, in fiat)
+        across all "reachable" markets (markets in which the base currency is fiat).
+        '''
+        available_coins = market_state.available_coins(self.fiat) - set([ self.fiat ])
+        fiat_investment_per_coin = market_state.balances[self.fiat] / ( len(available_coins) + 1.0 )
+        trades = self.propose_trades_from_fiat(available_coins, fiat_investment_per_coin,
+                                               market_state)
+        return trades
+
+
     def propose_trades_to_fiat (self, coins, ideal_fiat_value_per_coin,
-                                chart_data, balances):
+                                market_state):
         for coin in coins:
             if coin != self.fiat:
                 # Sell `coin` for `fiat`,
@@ -131,62 +152,45 @@ class Strategy (object):
                 # (and how much `coin` we should ask for)
                 # given the fiat value we want that coin to have after the trade
                 proposed = ProposedTrade(coin, self.fiat) \
-                           .sell_to_achieve_value_of(ideal_fiat_value_per_coin, balances,
-                                                     estimate_price_with=chart_data)
-                # if self.MarketAdapter.is_legal(proposed, chart_data):
-                yield proposed
+                           .sell_to_achieve_value_of(ideal_fiat_value_per_coin, market_state)
+                if proposed:
+                    yield proposed
 
 
-    def propose_trades_from_fiat (self, coins, investment_per_coin, chart_data, balances):
+    def propose_trades_from_fiat (self, coins, investment_per_coin,
+                                  market_state):
         for coin in coins:
             proposed = ProposedTrade(self.fiat, coin) \
                        .set_bid_amount(investment_per_coin,
-                                       estimate_price_with=chart_data)
+                                       market_state)
             yield proposed
 
 
-    def initial_proposed_trades (self, chart_data, balances):
-        '''
-        "Initial" purchases are from fiat.
-        (We assume funds start with only a fiat balance.)
-        The resulting proposed trades should result in an equal allocation (of value, in fiat)
-        across all "reachable" markets (markets in which the base currency is fiat).
-        '''
-        available_coins = set(self.available_coins(chart_data)) - set([ self.fiat ])
-        fiat_investment_per_coin = balances[self.fiat] / ( len(available_coins) + 1.0 )
-        trades = self.propose_trades_from_fiat(available_coins, fiat_investment_per_coin,
-                                               chart_data, balances)
-        return trades
+    def rebalancing_proposed_trades (self, coins_to_rebalance, market_state):
 
-
-    # TODO IF a method takes chart_data, balances, AND fiat,,,,,,,it probably just needs to take ONE market adapter.......
-    def rebalancing_proposed_trades (self, coins_to_rebalance, chart_data, balances):
-
-        available_coins = set(self.available_coins(chart_data)) - set([ self.fiat ])
-        total_value = balances.estimate_total_fiat_value(chart_data)
+        available_coins = market_state.available_coins(self.fiat) - set([ self.fiat ])
+        total_value = market_state.balances.estimate_total_fiat_value(market_state.chart_data)
         ideal_fiat_value_per_coin = total_value / len(available_coins) # TODO maybe +1? like above?
 
         proposed_trades_to_fiat = list(self.propose_trades_to_fiat(coins_to_rebalance,
                                                                    ideal_fiat_value_per_coin,
-                                                                   chart_data,
-                                                                   balances,))
+                                                                   market_state,))
 
         # Next, we will simulate actually executing all of these trades
         # Afterward, we'll get some simulated balances
         # TODO apply_purchaess should really be some kind of Simulate or whatever in a market adapter
-        est_bals_after_fiat_trades = balances.apply_purchases(proposed_trades_to_fiat)
+        est_bals_after_fiat_trades = market_state.balances.apply_purchases(proposed_trades_to_fiat)
 
         if self.fiat in coins_to_rebalance and len(proposed_trades_to_fiat) > 0:
             fiat_after_trades        = est_bals_after_fiat_trades[self.fiat]
             to_redistribute          = fiat_after_trades - ideal_fiat_value_per_coin
             coins_divested_from      = [ proposed.from_coin
                                          for proposed in proposed_trades_to_fiat]
-            coins_to_buy             = set(available_coins) - set(coins_divested_from) - set( [self.fiat] )
+            coins_to_buy             = available_coins - set(coins_divested_from) - set( [self.fiat] )
             to_redistribute_per_coin = to_redistribute / len(coins_to_buy)
             proposed_trades_from_fiat = self.propose_trades_from_fiat(coins_to_buy,
                                                                       to_redistribute_per_coin,
-                                                                      chart_data,
-                                                                      balances)
+                                                                      market_state)
             trades = proposed_trades_to_fiat + list(proposed_trades_from_fiat)
 
             return trades

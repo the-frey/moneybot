@@ -48,15 +48,14 @@ class Balances(object):
         # TODO I hate copying this
         new_balances = self.balances.copy()
         for proposed in proposed_trades:
-
             # Actually simulate purchase of the proposed trade
-            # TODO I hate mutating stuff out of scope, my god
+            # TODO I hate mutating stuff out of scope, so much
             new_balances = self.simulate(proposed, new_balances)
 
         return Balances(new_balances)
 
-    # self, charts -> Dict
-    def estimate_values (self, charts, key='weightedAverage'):
+    # self, chart_data -> Dict
+    def estimate_values (self, chart_data, key='weightedAverage'):
         '''
         Returns a dict where keys are coin names,
         and values are the value of our holdings in fiat.
@@ -69,7 +68,7 @@ class Balances(object):
                     fiat_values[coin] = amount_held
                 else:
                     relevant_market = '{!s}_{!s}'.format(self.fiat, coin)
-                    fiat_price = float(charts[relevant_market][key])
+                    fiat_price = float(chart_data[relevant_market][key])
                     fiat_values[coin] =  fiat_price * amount_held
             except KeyError:
                 # Remove the coin -- it has been delisted.
@@ -78,6 +77,6 @@ class Balances(object):
             self.balances.pop(removal)
         return fiat_values
 
-    def estimate_total_fiat_value (self, charts):
-        vs = self.estimate_values(charts)
+    def estimate_total_fiat_value (self, chart_data):
+        vs = self.estimate_values(chart_data)
         return sum(vs.values())

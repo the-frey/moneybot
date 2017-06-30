@@ -19,26 +19,25 @@ class BuffedCoinStrategy (Strategy):
         return False
 
 
-    def find_buffed_coins (self, chart_data, balances):
+    def find_buffed_coins (self, market_state):
         # if we hold other stuff,
-        est_values = balances.estimate_values(chart_data)
+        est_values = market_state.balances.estimate_values(market_state.chart_data)
         buffed_coins = [
-            coin for coin in self.held_coins_with_chart_data(chart_data, balances)
+            coin for coin in self.held_coins_with_chart_data(market_state)
             if self.is_buffed(coin, est_values)
-            # if is_buffed_fancy(coin, est_values)
-            # if is_buffed_fancy2(coin, est_values)
         ]
         return buffed_coins
 
-    def propose_trades (self, current_chart_data, current_balances, time):
+
+    def propose_trades (self, market_state):
         # First of all, if we only hold fiat,
-        if current_balances.held_coins() == [self.fiat]:
-            return self.initial_proposed_trades(current_chart_data, current_balances)
+        if market_state.only_holding(self.fiat):
+            return self.initial_proposed_trades(market_state)
         # If we do have stuff other than fiat,
         # see if any of those holdings are buffed
-        buffed_coins = self.find_buffed_coins(current_chart_data, current_balances)
+        buffed_coins = self.find_buffed_coins(market_state)
         # if any of them are,
         if len(buffed_coins):
             # sell them so as to reallocate their value eqaully
-            return self.rebalancing_proposed_trades(buffed_coins, current_chart_data, current_balances)
+            return self.rebalancing_proposed_trades(buffed_coins, market_state)
         return []

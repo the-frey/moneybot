@@ -1,7 +1,3 @@
-# String, String -> String
-def market_name (base, quote):
-    ''' Return Poloniex market name'''
-    return '{!s}_{!s}'.format(base, quote)
 
 class ProposedTrade (object):
 
@@ -22,9 +18,9 @@ class ProposedTrade (object):
         # we will construct the proper market name.
         # (yes, we can only trade directly fiat to/from fiat for now. sorry!)
         if from_coin == fiat:
-            self.market_name = market_name(fiat, to_coin)
+            self.market_name = self._get_market_name(fiat, to_coin)
         elif to_coin == fiat:
-            self.market_name = market_name(fiat, from_coin)
+            self.market_name = self._get_market_name(fiat, from_coin)
 
 
     def __str__ (self):
@@ -38,6 +34,10 @@ class ProposedTrade (object):
     '''
     Private methods
     '''
+    # String, String -> String
+    def _get_market_name (self, base, quote):
+        ''' Return Poloniex market name'''
+        return '{!s}_{!s}'.format(base, quote)
 
     # Float, Float -> Float
     def _purchase_amount (self, investment, price):
@@ -70,8 +70,7 @@ class ProposedTrade (object):
 
 
     # Float -> Purchase
-    def set_bid_amount (self, amount,
-                        estimate_price_with=None):
+    def set_bid_amount (self, amount, market_state):
         '''
         Set how much `from_coin` we are putting on sale, by value.
 
@@ -80,38 +79,43 @@ class ProposedTrade (object):
         When `self.estimate_price_with` is passed a `chart` object,
         it will pass this down to `estimate_price()`.
         '''
-        self.bid_amount = amount
-        if estimate_price_with:
-            self = self.estimate_price(estimate_price_with)
-            self.ask_amount = self._purchase_amount(amount, self.price)
+        if amount > market_state.balances.balances[self.from_coin]:
+            self.bid_amount = market_state.balances.balances[self.from_coin]
+        else:
+            self.bid_amount = amount
+
+        self = self.estimate_price(market_state.chart_data)
+        self.ask_amount = self._purchase_amount(amount, self.price)
+
         return self
 
 
-    def sell_to_achieve_value_of (self, value_in_to_coin, balances,
-                                  estimate_price_with=None):
+    def sell_to_achieve_value_of (self, desired_value, market_state):
         '''
         TODO Docstring
         '''
-        if estimate_price_with:
-            self = self.estimate_price(estimate_price_with)
+        self = self.estimate_price(market_state.chart_data)
         if not self.price:
-            print('ERROR: Must set a price for ProposedTrade,\
-or pass a chart object into estimate_price_with')
+            print('ERROR: Must set a price for ProposedTrade, or pass a chart object into estimate_price_with')
             raise
         # After rebalance, we want the value of the coin we're trading to
         # to be equal to the ideal value (in fiat).
         # First we'll find the value of the coin we currently hold.
         # TODO balances.balances ?????
         # TODO That's a confusing-ass name
-        current_from_coin_value_in_to_coin = (balances.balances[self.from_coin] * self.price)
+        current_value = (market_state.balances.balances[self.from_coin] * self.price)
         # To find how much coin we want to sell,
         # we'll subtract our holding's value from the ideal value
         # to produce the value of coin we must sell
-        value_to_sell = current_from_coin_value_in_to_coin - value_in_to_coin
+        value_to_sell = current_value - desired_value
+        if value_to_sell < 0:
+            return None
         # Now we find the amount of coin equal to this value
         amount_to_sell = value_to_sell / self.price
-        self = self.set_bid_amount(amount_to_sell,
-                                   estimate_price_with=estimate_price_with)
+        if amount_to_sell < 0:
+            amount_to_sell = 0
+            # print('REACHED!', value_to_sell, desired_value, amount_to_sell)
+        self = self.set_bid_amount(amount_to_sell, market_state)
         return self
 
 

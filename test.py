@@ -10,12 +10,13 @@ with open('config.json.example') as cfg_file:
 # The start and end of our test period
 start = '2017-05-01'
 end = '2017-06-01'
-# Each strategy, and the USD values it should produce after 
+# Each strategy, and the USD values it should produce after
 # each step through the series of trade-times.
 expected_results = [
     {
         'strategy': BuffedCoinStrategy,
-            'values': [1318.21, 1250.13, 1318.79, 1355.47, 1560.75, 1694.85, 1918.27, 1866.54, 1888.66, 2039.06, 1967.42, 2184.11, 2326.3, 2461.91, 2589.18, 2544.36, 2420.49, 2778.22, 2958.32, 3313.64, 3686.43, 3704.98, 4091.39, 4400.23, 4135.33, 4887.53, 3549.03, 3364.61, 3581.18, 3743.0, 4268.86, 4319.96]
+        'values': [1318.21, 1250.13, 1318.79, 1355.47, 1560.75, 1694.85, 1918.27, 1866.54, 1888.66, 2039.06, 1967.42, 2184.11, 2326.3, 2461.91, 2589.18, 2544.36, 2420.49, 2778.22, 2958.32, 3313.64, 3686.43, 3737.96, 4150.13, 4280.4, 3889.11, 4603.71, 3306.25, 3189.64, 3336.14, 3449.11, 3515.63, 3613.68]
+
     },
     {
         'strategy': BuyHoldStrategy,
