@@ -43,12 +43,12 @@ class LiveMarketAdapter (MarketAdapter):
 
     # Float -> Float
     def _adjust_up (self, val, **kwargs):
-        return _adjust(val, operator.__add__, **kwargs)
+        return self._adjust(val, operator.__add__, **kwargs)
 
 
     # Float -> Float
     def _adjust_down (self, val, **kwargs):
-        return _adjust(val, operator.__sub__, **kwargs)
+        return self._adjust(val, operator.__sub__, **kwargs)
 
 
     def _purchase_helper (self, market, price, amount, purchase_fn, adjust_fn):
