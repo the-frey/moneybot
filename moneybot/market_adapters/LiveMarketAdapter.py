@@ -52,6 +52,7 @@ class LiveMarketAdapter (MarketAdapter):
 
 
     def _purchase_helper (self, market, price, amount, purchase_fn, adjust_fn):
+        print('purchasing', market, price, amount)
         try:
             res = purchase_fn(
                 market,
@@ -61,6 +62,7 @@ class LiveMarketAdapter (MarketAdapter):
                 orderType = 'fillOrKill')
         # If we can't fill the order at this price,
         except:
+            print('killed off!!! retrying')
             # recursively again at a (higher / lower) price
             adjusted_price = adjust_fn(price)
             return self._purchase_helper(

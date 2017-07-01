@@ -7,12 +7,12 @@ from dateutil import parser
 from funcy import compose, partial
 import requests
 import json
+YEAR = 60 * 60 * 24 * 365
+YEAR_AGO = time.time()-YEAR
 
 
 def scrape_since_last_reading (client):
 
-    YEAR = 60 * 60 * 24 * 365
-    YEAR_AGO = time.time()-YEAR
     polo     = Poloniex()
     strftime = lambda ts: ts.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -66,7 +66,14 @@ def scrape_since_last_reading (client):
         contemporary_usd_price = lambda row: row['weightedAverage']*contemporary_btc_price(row)
         ts_df['price_usd'] = ts_df.apply(contemporary_usd_price, axis=1)
         for _, row in ts_df.iterrows():
-            yield scraped_chart(pair, row)
+            chart = scraped_chart(pair, row)
+            # for some reason, when there's no chart data to report,
+            # the API will give us some reading with all 0s.
+            if chart['fields']['volume'] == 0 and chart['fields']['weightedAverage'] == 0:
+                # we will just ignore these
+                pass
+            else:
+                yield chart
 
 
     # get the most recent chart data
@@ -91,15 +98,31 @@ def scrape_since_last_reading (client):
     for market in polo.returnTicker():
         # fetch all the chart data
         # since that last fetch.
-        try:
-            generator = historical_prices_of(market,
-                                             start=latest_fetch_unix,
-                                             end=time.time())
-            client.write_points(generator)
-            print('scraped %s', market)
-        except:
-            print('error scraping %s market', market)
+        # try:
+        generator = historical_prices_of(market,
+                                         start=latest_fetch_unix,
+                                         end=time.time())
+        client.write_points(generator)
+        print('scraped', market)
+        # except:
+            # print('error scraping market', market)
 
+
+    def marshall (hist_df, key='price_btc'):
+        btc_to_usd = hist_df['price_usd'] / hist_df['price_btc']
+        # volume in BTC
+        hist_df['volume'] = hist_df['volume_usd'] / btc_to_usd
+        hist_df = hist_df.drop([
+            'market_cap_by_available_supply',
+            'volume_usd'
+        ], axis=1)
+        hist_df = hist_df.rename(columns={key: 'weightedAverage'})
+        return hist_df
+
+    # Finally, write USD_BTC history to the client as well
+    btc_rows = marshall(btc_price_hist, key='price_usd')
+    client.write_points(scraped_chart('USD_BTC', row)
+                        for _, row in btc_rows.iterrows())
 
 class MarketHistory (object):
 
@@ -155,4 +178,3 @@ class MarketHistory (object):
         df = pd.Series([p[1] for p in prices])
         df.index = [p[0] for p in prices]
         return df
-

@@ -107,7 +107,7 @@ class MarketState (object):
         '''
         Returns the sum of all holding values, in USD.
         '''
-        est = self.estimate_total_value() * self.price('USDT_BTC', **kwargs)
+        est = self.estimate_total_value() * self.price('USD_BTC', **kwargs)
         return round(est, 2)
 
 
