@@ -123,6 +123,7 @@ def scrape_since_last_reading (client):
     btc_rows = marshall(btc_price_hist, key='price_usd')
     client.write_points(scraped_chart('USD_BTC', row)
                         for _, row in btc_rows.iterrows())
+    print('scraped USD_BTC')
 
 class MarketHistory (object):
 
