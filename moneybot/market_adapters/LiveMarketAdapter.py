@@ -1,6 +1,7 @@
 from . import MarketAdapter
 from poloniex import Poloniex
 from time import sleep
+from functools import partial
 import operator
 
 class LiveMarketAdapter (MarketAdapter):
@@ -50,9 +51,25 @@ class LiveMarketAdapter (MarketAdapter):
     def _adjust_down (self, val, **kwargs):
         return self._adjust(val, operator.__sub__, **kwargs)
 
+    # String, String, Float, Float, String -> Dict
+    def _proposed_trade_measurement (self, direction, market, price, amount, order_status):
+        return {
+            'measurement': 'proposedTrade',
+            'tags': {
+                'order_status': order_status,
+            },
+            'fields': {
+                'direction': direction,
+                'market': market,
+                'price': price,
+                'amount': amount,
+            }
+        }
 
-    def _purchase_helper (self, market, price, amount, purchase_fn, adjust_fn):
-        print('purchasing', market, price, amount)
+
+    def _purchase_helper (self, direction, market, price, amount, purchase_fn, adjust_fn):
+        make_measurement = partial(self._proposed_trade_measurement,
+                                   direction, market, price, amount)
         try:
             res = purchase_fn(
                 market,
@@ -60,12 +77,16 @@ class LiveMarketAdapter (MarketAdapter):
                 amount,
                 # Cancel order if not fulfilled in entirity at this price
                 orderType = 'fillOrKill')
+            measurement = make_measurement('filled')
+            print(measurement)
         # If we can't fill the order at this price,
         except:
-            print('killed off!!! retrying')
+            measurement = make_measurement('killed')
+            print(measurement)
             # recursively again at a (higher / lower) price
             adjusted_price = adjust_fn(price)
             return self._purchase_helper(
+                direction,
                 market,
                 adjusted_price,
                 amount,
@@ -81,6 +102,7 @@ class LiveMarketAdapter (MarketAdapter):
         # if we're trading FROM fiat, that's a "sell"
         if proposed_trade.from_coin == market_state.fiat:
             return self._purchase_helper(
+                'buy',
                 proposed_trade.market_name,
                 proposed_trade.market_price,
                 proposed_trade.ask_amount,
@@ -94,9 +116,10 @@ class LiveMarketAdapter (MarketAdapter):
         # if we're trading TO fiat, that's a "sell"
         elif proposed_trade.to_coin == market_state.fiat:
             return self._purchase_helper(
+                'sell',
                 proposed_trade.market_name,
                 proposed_trade.market_price,
-                proposed_trade.ask_amount,
+                proposed_trade.bid_amount,
                 self.polo.sell,
                 # We try to sell high,
                 # But don't always get to,
