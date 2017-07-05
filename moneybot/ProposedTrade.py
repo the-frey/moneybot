@@ -1,15 +1,18 @@
+from .MarketState import MarketState
 
 class ProposedTrade (object):
 
-    def __init__ (self, from_coin, to_coin,
-                  fiat='BTC', fee=0.0025):
+    def __init__ (self, from_coin: str,
+                  to_coin: str,
+                  fiat='BTC',
+                  fee=0.0025) -> None:
 
         self.from_coin = from_coin
         self.to_coin = to_coin
         self.fiat = fiat
-        self.price = 0
-        self.ask_amount = 0
-        self.bid_amount = 0
+        self.price = 0.
+        self.ask_amount = 0.
+        self.bid_amount = 0.
         self.fee = fee
 
         # get the Poloniex market name
@@ -34,13 +37,17 @@ class ProposedTrade (object):
     '''
     Private methods
     '''
-    # String, String -> String
-    def _get_market_name (self, base, quote):
+
+    def _get_market_name (self,
+                          base: str,
+                          quote: str) -> str:
         ''' Return Poloniex market name'''
         return '{!s}_{!s}'.format(base, quote)
 
-    # Float, Float -> Float
-    def _purchase_amount (self, investment, price):
+
+    def _purchase_amount (self,
+                          investment: float,
+                          price: float) -> float:
         '''
         Private method.
         Get the amount of some coin purchased,
@@ -55,9 +62,7 @@ class ProposedTrade (object):
     Utility methods
     '''
 
-
-    # ChartData -> Float
-    def estimate_price (self, market_state):
+    def estimate_price (self, market_state: MarketState) -> None:
         '''
         Returns the approximate price of the quote value, given some chart data.
         '''
@@ -73,8 +78,9 @@ class ProposedTrade (object):
             self.price = base_price
 
 
-    # Float -> Purchase
-    def set_bid_amount (self, amount, market_state):
+    def set_bid_amount (self,
+                        amount: float,
+                        market_state: MarketState) -> None:
         '''
         Set how much `from_coin` we are putting on sale, by value.
 
@@ -92,9 +98,13 @@ class ProposedTrade (object):
         self.ask_amount = self._purchase_amount(amount, self.price)
 
 
-    def sell_to_achieve_value_of (self, desired_value, market_state):
+    def sell_to_achieve_value_of (self,
+                                  desired_value: float,
+                                  market_state: MarketState) -> None:
         '''
-        TODO Docstring
+        Sets `self.bid_amount`, `self.ask_amount`, `self.price`
+        such that the proposed trade would leave us with a
+        holding of `desired_value`.
         '''
         self.estimate_price(market_state)
         if not self.price:
@@ -114,5 +124,3 @@ class ProposedTrade (object):
             amount_to_sell = 0
             # print('REACHED!', value_to_sell, desired_value, amount_to_sell)
         self.set_bid_amount(amount_to_sell, market_state)
-
-

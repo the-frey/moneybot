@@ -1,10 +1,16 @@
+from typing import Dict, List, Tuple, Set
+
 class MarketState (object):
 
     '''
     TODO Docstring
     '''
 
-    def __init__ (self, chart_data, balances, time, fiat):
+    def __init__ (self,
+                  chart_data: Dict[str, float],
+                  balances: Dict[str, float],
+                  time: str,
+                  fiat: str) -> None:
         self.chart_data = chart_data
         self.balances = balances
         self.time = time
@@ -15,17 +21,17 @@ class MarketState (object):
     Private methods
     '''
 
-    def _held_coins (self):
+    def _held_coins (self) -> List[str]:
         return [k  for k in self.balances.keys()
                 if self.balances[k] > 0 ]
 
 
-    def _coin_names (self, market_name):
+    def _coin_names (self, market_name: str) -> Tuple[str, str]:
         coins = market_name.split('_')
         return coins[0], coins[1]
 
 
-    def _available_markets (self):
+    def _available_markets (self) -> Set[str]:
         return set([ k for k in self.chart_data.keys()
                      if k.startswith(self.fiat) ])
 
@@ -34,44 +40,40 @@ class MarketState (object):
     Public methods
     '''
 
-    # String -> Float
-    def balance (self, coin):
+    def balance (self, coin: str) -> float:
         '''
         Returns the quantity of a coin held.
         '''
         return self.balances[coin]
 
 
-    # String -> Float
-    def price (self, market,
-               key='weightedAverage'):
+    # TODO types
+    def price (self, market, key='weightedAverage'):
         '''
         Returns the price of a market, in terms of the base asset.
         '''
-        return float(self.chart_data[market][key])
+        return self.chart_data[market][key]
 
 
-    # String -> Bool
-    def only_holding (self, coin):
+    def only_holding (self, coin: str) -> bool:
         '''
         Returns true if the only thing we are holding is `coin`
         '''
         return self._held_coins() == [ coin ]
 
 
-    # MarketState -> Set<String>
-    def available_coins (self):
+    def available_coins (self) -> Set[str]:
         markets = self._available_markets()
         return set([ self._coin_names(market)[1]
                      for market in markets ] + [ self.fiat ])
 
 
-    def held_coins_with_chart_data (self):
+    def held_coins_with_chart_data (self) -> Set[str]:
         avail_coins = self.available_coins()
         return set(self._held_coins()).intersection(avail_coins)
 
 
-    def estimate_values (self, **kwargs):
+    def estimate_values (self, **kwargs) -> Dict[str, float]:
         '''
         Returns a dict where keys are coin names,
         and values are the value of our holdings in fiat.
@@ -94,16 +96,14 @@ class MarketState (object):
         return fiat_values
 
 
-    # -> Float
-    def estimate_total_value (self, **kwargs):
+    def estimate_total_value (self, **kwargs) -> float:
         '''
         Returns the sume of all holding values, in fiat.
         '''
         return sum(self.estimate_values(**kwargs).values())
 
 
-    # -> Float
-    def estimate_total_value_usd (self, **kwargs):
+    def estimate_total_value_usd (self, **kwargs) -> float:
         '''
         Returns the sum of all holding values, in USD.
         '''

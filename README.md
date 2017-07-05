@@ -21,7 +21,9 @@ See [Restoring influxDB](https://docs.influxdata.com/influxdb/v1.2/administratio
 
 # use
 
-For an example of backtesting.
+First, make sure Influx is running.
+
+For an example of backtesting,
 
     python3 backtest.py
 

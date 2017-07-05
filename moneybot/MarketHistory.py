@@ -1,3 +1,4 @@
+from typing import List, Dict
 import pandas as pd
 from influxdb import InfluxDBClient
 from poloniex import Poloniex
@@ -11,17 +12,17 @@ YEAR = 60 * 60 * 24 * 365
 YEAR_AGO = time.time()-YEAR
 
 
-def scrape_since_last_reading (client):
+def scrape_since_last_reading (client: InfluxDBClient) -> None:
 
     polo     = Poloniex()
     strftime = lambda ts: ts.strftime('%Y-%m-%d %H:%M:%S')
 
-    def historical (ticker):
+    def historical (ticker: str) -> Dict:
         url =  'https://graphs.coinmarketcap.com/currencies/{!s}'.format(ticker)
         return requests.get(url).json()
 
 
-    def market_cap (hist_ticker):
+    def market_cap (hist_ticker: Dict) -> pd.Series:
         r = {}
         ts = None
         for key, vals in hist_ticker.items():
@@ -34,8 +35,8 @@ def scrape_since_last_reading (client):
     coin_history = compose(market_cap, historical)
     btc_price_hist = coin_history('bitcoin')
 
-    # String, PandasSeries -> InfluxMeasurement
-    def scraped_chart (currency_pair, row):
+    def scraped_chart (currency_pair: str,
+                       row: pd.Series) -> Dict:
         return {
             'measurement': 'scrapedChart',
             'tags': {
@@ -46,8 +47,10 @@ def scrape_since_last_reading (client):
         }
 
 
-    # Str, Int -> PandasSeries
-    def historical_prices_of (pair, period=900, start=YEAR_AGO, end=time.time()):
+    def historical_prices_of (pair: str,
+                              period=900,
+                              start=YEAR_AGO,
+                              end=time.time()) -> pd.Series:
         '''
         Returns a series of time-indexed prices.
 
@@ -125,13 +128,15 @@ def scrape_since_last_reading (client):
                         for _, row in btc_rows.iterrows())
     print('scraped USD_BTC')
 
+    return
+
 class MarketHistory (object):
 
     '''
     TODO Docstring
     '''
 
-    def __init__ (self, config):
+    def __init__ (self, config: Dict) -> None:
         self.client = InfluxDBClient(config['db']['hostname'],
                                      config['db']['port'],
                                      config['db']['username'],
@@ -139,18 +144,18 @@ class MarketHistory (object):
                                      config['db']['database'])
 
 
-    def scrape_latest (self):
+    def scrape_latest (self) -> None:
         return scrape_since_last_reading(self.client)
 
     # String -> { 'BTC_ETH': { weightedAverage, ...} ...}
-    # see https://bitbucket.org/peakrider/poloniex-chart-history
     # TODO One issue here is that we are *only* getting the latest (15-minute) candlestic
     # So, if we are only trading once per day, certain values (like volume) will be misleading,
     # as they won't cover teh whole 24-hour period.
     # We could, in the future, address this by taking all the candlesticks since we last checked
     # and pass them through to the strategy together, sorted ny time.
     # Then, the strategy can then decide how to combine them.
-    def latest (self, time):
+    def latest (self,
+                time: str) -> Dict[str, Dict[str, float]]:
         q ='''
         select * from scrapedChart
         where time <= '{!s}' and time > '{!s}' - 1d
@@ -164,9 +169,12 @@ class MarketHistory (object):
         return coin_generator_tuples
 
 
-    # String, String -> [ Float... ]
-    def asset_history (self, time, base, quote,
-                            days_back=30, key='price_usd'):
+    def asset_history (self,
+                       time: str,
+                       base: str,
+                       quote: str,
+                       days_back=30,
+                       key='price_usd') -> List[float]:
         currency_pair = '{!s}_{!s}'.format(base, quote)
         q ='''
         select * from scrapedChart

@@ -1,22 +1,26 @@
+from typing import Tuple, List
+from moneybot.strategies import Strategy
+
 import pandas as pd
 from datetime import timedelta
 from multiprocessing import Pool
 import numpy as np
 
 
-def roi (values):
+def roi (values: List[float]) -> float:
     return (values[-1] - values[0]) / values[0]
 
 
-def max_drawdown (values):
+def max_drawdown (values: List[float]) -> float:
     maximum = max(values)
     idxmax = values.index(maximum)
     subsequent = values[idxmax:]
     return (maximum - min(subsequent)) / maximum
 
 
-def sterling_ratio (many_values, days_per_simulation,
-                    risk_free_rate = 0.0091):
+def sterling_ratio (many_values: List[List[float]],
+                    days_per_simulation: int,
+                    risk_free_rate = 0.0091) -> float:
     rate_per_day  = risk_free_rate/90
     adjusted_rate = rate_per_day * days_per_simulation
     rs            = [roi(v) for v in many_values]
@@ -33,7 +37,8 @@ def sterling_ratio (many_values, days_per_simulation,
 #     return my_roi
 
 
-def summary (many_values, days_per_simulation):
+def summary (many_values: List[List[float]],
+             days_per_simulation: int) -> pd.Series:
     rois = pd.Series([roi(values) for values in many_values])
     rois_desc = rois.describe()
     rois_desc['sterling_ratio'] = sterling_ratio(many_values, days_per_simulation)
@@ -42,16 +47,19 @@ def summary (many_values, days_per_simulation):
 
 # This needs to be a top-level method
 # So that it can be pickled by multiprocessing.Pool
-def backtest (strategy_dates):
+def backtest (strategy_dates: Tuple[Strategy, str, str]) -> List[float]:
     strategy, start, end = strategy_dates
     print('Testing from {!s} to {!s}'.format(start, end))
     return list(strategy.begin_backtest(start, end))
 
 
 
-def evaluate (strategy, start_date, end_date,
-              duration_days = 90, window_distance_days = 30,
-              verbose = True, num_threads=4):
+def evaluate (strategy: float,
+              start_date: str,
+              end_date: str,
+              duration_days = 90,
+              window_distance_days = 30,
+              verbose = True, num_threads=4) -> pd.Series:
 
     start = pd.Timestamp(start_date)
     end = pd.Timestamp(end_date)
