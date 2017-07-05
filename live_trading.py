@@ -1,10 +1,12 @@
 import json
-from fundrunner.strategies.buffedcoinstrategy import BuffedCoinStrategy
+from moneybot.Fund import Fund
+from moneybot.market_adapters.LiveMarketAdapter import LiveMarketAdapter
+from moneybot.strategies.BuffedCoinStrategy import BuffedCoinStrategy
 
 with open('config.json') as cfg_file:
 	config = json.load(cfg_file)
 
-strat = BuffedCoinStrategy(config)
-
-strat.run_live()
+# strat = BuffedCoinStrategy(LiveMarketAdapter, config)
+fund = Fund(BuffedCoinStrategy, LiveMarketAdapter, config)
+fund.run_live()
 

@@ -20,5 +20,6 @@
     }
   },
 
-  "trade_interval": 86400
+  "trade_interval": 86400,
+  "fiat": "BTC"
 }

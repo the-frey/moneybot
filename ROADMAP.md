@@ -2,7 +2,13 @@
 
 Feel free to reorganize or make suggestions based on what you think is priority and realistic for where the codebase is now.
 
-## live-trading
+* Withdrawals
 
-* Withdraw: as a user I would like withdraw an ammount from my indux fund and have it be applied easily
+* Record trades attempted and completed (with influx)
 
+* Optional but nice
+    * Deposit method?
+    * Replace with proper logging everywhere
+    
+* Suggested
+    * Auto-withdraw feature?

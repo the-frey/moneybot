@@ -1,4 +1,4 @@
-# FundRunner
+# MoneyBot
 
 To use fund runner you create a custom trading strategy (or use one of the provided examples), which you can:
 * Backtest over historical data
