@@ -40,7 +40,7 @@ For an example, see `live_trading.py`
 
 ## disclaimer
 
-Use it AT YOUR OWN RISK. Specifically, 
+Use MoneyBot AT YOUR OWN RISK. Specifically, 
 
 - Backtests are no guarantee of future/live performance. 
 - MoneyBot relies on 3rd-party APIs, like Poloniex, which may fail at anytime.
