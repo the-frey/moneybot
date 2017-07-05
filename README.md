@@ -33,10 +33,6 @@ You need to install [influxdb](https://www.influxdata.com/) (tested on v1.2.2), 
 
 For an example, see `polo_purchase.py`
 
-### Grafana
+# license
 
-Finally, there is a grafana dashboard.
-
-[Install Grafana](https://grafana.com/grafana/download) for your platform, and hook up Influx DB using the GUI.
-
-Then, in Grafana's dashboard pane, import the .json file in the `grafana/` directory.
+BSD
