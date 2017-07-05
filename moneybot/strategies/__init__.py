@@ -48,17 +48,17 @@ class Strategy (object):
                 # estimating how much `fiat` we should bid
                 # (and how much `coin` we should ask for)
                 # given the fiat value we want that coin to have after the trade
-                proposed = ProposedTrade(coin, self.fiat) \
-                           .sell_to_achieve_value_of(fiat_value_per_coin, market_state)
-                if proposed:
+                proposed = ProposedTrade(coin, self.fiat)
+                proposed.sell_to_achieve_value_of(fiat_value_per_coin, market_state)
+                if proposed.bid_amount > 0:
                     yield proposed
 
 
     # Seq<str>, Float, MarketState -> Generator<ProposedTrade>
     def _propose_trades_from_fiat (self, coins, fiat_investment_per_coin, market_state):
         for coin in coins:
-            proposed = ProposedTrade(self.fiat, coin) \
-                       .set_bid_amount(fiat_investment_per_coin, market_state)
+            proposed = ProposedTrade(self.fiat, coin)
+            proposed.set_bid_amount(fiat_investment_per_coin, market_state)
             yield proposed
 
 

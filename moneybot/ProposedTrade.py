@@ -7,9 +7,9 @@ class ProposedTrade (object):
         self.from_coin = from_coin
         self.to_coin = to_coin
         self.fiat = fiat
-        self.price = None
-        self.ask_amount = None
-        self.bid_amount = None
+        self.price = 0
+        self.ask_amount = 0
+        self.bid_amount = 0
         self.fee = fee
 
         # get the Poloniex market name
@@ -71,7 +71,6 @@ class ProposedTrade (object):
             self.price = (1 / base_price)
         else:
             self.price = base_price
-        return self
 
 
     # Float -> Purchase
@@ -89,17 +88,15 @@ class ProposedTrade (object):
         else:
             self.bid_amount = amount
 
-        self = self.estimate_price(market_state)
+        self.estimate_price(market_state)
         self.ask_amount = self._purchase_amount(amount, self.price)
-
-        return self
 
 
     def sell_to_achieve_value_of (self, desired_value, market_state):
         '''
         TODO Docstring
         '''
-        self = self.estimate_price(market_state)
+        self.estimate_price(market_state)
         if not self.price:
             print('ERROR: Must set a price for ProposedTrade, or pass a chart object into estimate_price_with')
             raise
@@ -111,14 +108,11 @@ class ProposedTrade (object):
         # we'll subtract our holding's value from the ideal value
         # to produce the value of coin we must sell
         value_to_sell = current_value - desired_value
-        if value_to_sell < 0:
-            return None
         # Now we find the amount of coin equal to this value
         amount_to_sell = value_to_sell / self.price
-        if amount_to_sell < 0:
+        if amount_to_sell <= 0 or value_to_sell <= 0:
             amount_to_sell = 0
             # print('REACHED!', value_to_sell, desired_value, amount_to_sell)
-        self = self.set_bid_amount(amount_to_sell, market_state)
-        return self
+        self.set_bid_amount(amount_to_sell, market_state)
 
 
