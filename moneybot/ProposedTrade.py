@@ -120,7 +120,4 @@ class ProposedTrade (object):
         value_to_sell = current_value - desired_value
         # Now we find the amount of coin equal to this value
         amount_to_sell = value_to_sell / self.price
-        if amount_to_sell <= 0 or value_to_sell <= 0:
-            amount_to_sell = 0
-            # print('REACHED!', value_to_sell, desired_value, amount_to_sell)
         self.set_bid_amount(amount_to_sell, market_state)

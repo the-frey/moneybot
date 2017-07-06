@@ -128,8 +128,6 @@ def scrape_since_last_reading (client: InfluxDBClient) -> None:
                         for _, row in btc_rows.iterrows())
     print('scraped USD_BTC')
 
-    return
-
 class MarketHistory (object):
 
     '''

@@ -1,4 +1,5 @@
 from typing import List, Iterator
+from datetime import datetime
 from ..MarketState import MarketState
 from ..ProposedTrade import ProposedTrade
 
@@ -20,7 +21,7 @@ class MarketAdapter (object):
         raise NotImplementedError
 
 
-    def get_market_state (self, time: str) -> MarketState:
+    def get_market_state (self, time: datetime) -> MarketState:
         # Get the latest chart data from the market
         charts = self.MarketHistory.latest(time)
         balances = self.get_balances()

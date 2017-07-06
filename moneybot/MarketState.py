@@ -1,4 +1,5 @@
 from typing import Dict, List, Tuple, Set
+from datetime import datetime
 
 class MarketState (object):
 
@@ -9,7 +10,7 @@ class MarketState (object):
     def __init__ (self,
                   chart_data: Dict[str, float],
                   balances: Dict[str, float],
-                  time: str,
+                  time: datetime,
                   fiat: str) -> None:
         self.chart_data = chart_data
         self.balances = balances

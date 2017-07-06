@@ -28,7 +28,7 @@ class Fund (object):
 
     def step (self,
               time: datetime) -> float:
-        market_state = self.MarketAdapter.get_market_state(str(time))
+        market_state = self.MarketAdapter.get_market_state(time)
         # Now, propose trades. If you're writing a strategy, you will override this method.
         proposed_trades = self.Strategy.propose_trades(market_state, self.MarketHistory)
         # If the strategy proposed any trades, we execute them.
