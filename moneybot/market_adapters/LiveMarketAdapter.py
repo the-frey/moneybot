@@ -1,4 +1,7 @@
+from typing import Dict, Callable, List, Any
 from . import MarketAdapter
+from ..MarketState import MarketState
+from ..ProposedTrade import ProposedTrade
 from poloniex import Poloniex
 from time import sleep
 from functools import partial
@@ -6,13 +9,17 @@ import operator
 
 class LiveMarketAdapter (MarketAdapter):
 
-    def __init__ (self, config):
+    def __init__ (self,
+                  market_history: MarketState,
+                  config: Dict) -> None:
         self.polo = Poloniex(config['livetrading']['poloniex']['pk'],
                              config['livetrading']['poloniex']['sk'])
+        self.MarketHistory = market_history
         self.balances = self.get_balances()
+        self.fiat = config['fiat']
 
 
-    def get_balances (self):
+    def get_balances (self) -> Dict[str, float]:
         bals = self.polo.returnCompleteBalances()
         all_balances = {}
         for coin, bal, in bals.items():
@@ -22,7 +29,9 @@ class LiveMarketAdapter (MarketAdapter):
         return all_balances
 
 
-    def execute (self, proposed_trades, market_state):
+    def execute (self,
+                 proposed_trades: List[ProposedTrade],
+                 market_state: MarketState) -> None:
         for trade in proposed_trades:
             self._place_order(trade, market_state)
         self.balances = self.get_balances()
@@ -32,8 +41,11 @@ class LiveMarketAdapter (MarketAdapter):
     Private methods
     '''
 
-    # Float, Method, [Float] -> Float
-    def _adjust (self, val, operator, tweak = 0.001):
+
+    def _adjust (self,
+                 val: float,
+                 operator: Callable,
+                 tweak = 0.001) -> float:
         '''
         Pass in `operator.__add__`
         or `operator.__sub__`
@@ -42,17 +54,24 @@ class LiveMarketAdapter (MarketAdapter):
         return operator(val, (val*tweak))
 
 
-    # Float -> Float
-    def _adjust_up (self, val, **kwargs):
+    def _adjust_up (self,
+                    val: float,
+                    **kwargs) -> float:
         return self._adjust(val, operator.__add__, **kwargs)
 
 
-    # Float -> Float
-    def _adjust_down (self, val, **kwargs):
+    def _adjust_down (self,
+                      val: float,
+                      **kwargs) -> float:
         return self._adjust(val, operator.__sub__, **kwargs)
 
     # String, String, Float, Float, String -> Dict
-    def _proposed_trade_measurement (self, direction, market, price, amount, order_status):
+    def _proposed_trade_measurement (self,
+                                     direction: str,
+                                     market: str,
+                                     price: float,
+                                     amount: float,
+                                     order_status: str) -> Dict:
         return {
             'measurement': 'proposedTrade',
             'tags': {
@@ -67,7 +86,13 @@ class LiveMarketAdapter (MarketAdapter):
         }
 
 
-    def _purchase_helper (self, direction, market, price, amount, purchase_fn, adjust_fn):
+    def _purchase_helper (self,
+                          direction: str,
+                          market: str,
+                          price: float,
+                          amount: float,
+                          purchase_fn: Callable,
+                          adjust_fn: Callable) -> Dict:
         make_measurement = partial(self._proposed_trade_measurement,
                                    direction, market, price, amount)
         try:
@@ -96,8 +121,9 @@ class LiveMarketAdapter (MarketAdapter):
         return res
 
 
-    # ProposedTrade -> Response
-    def _place_order (self, proposed_trade, market_state):
+    def _place_order (self,
+                      proposed_trade: ProposedTrade,
+                      market_state: MarketState) -> Dict:
 
         # if we're trading FROM fiat, that's a "sell"
         if proposed_trade.from_coin == market_state.fiat:
@@ -126,3 +152,5 @@ class LiveMarketAdapter (MarketAdapter):
                 # so we adjust down if we must.
                 self._adjust_down,
             )
+
+        return {}
