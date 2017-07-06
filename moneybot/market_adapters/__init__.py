@@ -1,4 +1,4 @@
-from typing import List, Generator
+from typing import List, Iterator
 from ..MarketState import MarketState
 from ..ProposedTrade import ProposedTrade
 
@@ -15,7 +15,7 @@ class MarketAdapter (object):
 
 
     def execute (self,
-                 proposed_trades: Generator[ProposedTrade, None, None],
+                 proposed_trades: Iterator[ProposedTrade],
                  market_state: MarketState) -> None:
         raise NotImplementedError
 
@@ -32,7 +32,7 @@ class MarketAdapter (object):
 
     def filter_legal (self,
                       proposed_trades: List[ProposedTrade],
-                      market_state: MarketState) -> Generator[ProposedTrade, None, None]:
+                      market_state: MarketState) -> Iterator[ProposedTrade]:
         '''
         Takes a list of ProposedTrade objects.
         Checks that each is a legal trade by the rules of our market.

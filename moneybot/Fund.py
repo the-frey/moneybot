@@ -1,4 +1,4 @@
-from typing import Dict, Generator, Type
+from typing import Dict, Iterator, Type
 from .market_adapters import MarketAdapter
 from .strategies import Strategy
 from .MarketHistory import MarketHistory
@@ -78,7 +78,7 @@ class Fund (object):
 
     def begin_backtest (self,
                         start_time: str,
-                        end_time: str) -> Generator[float, None, None]:
+                        end_time: str) -> Iterator[float]:
         '''
         Takes a start time and end time (as parse-able date strings).
 

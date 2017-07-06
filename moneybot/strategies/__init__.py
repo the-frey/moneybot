@@ -1,4 +1,4 @@
-from typing import Set, Dict, List, Generator
+from typing import Set, Dict, List, Iterator
 from ..ProposedTrade import ProposedTrade
 from ..MarketHistory import MarketHistory
 from ..MarketState import MarketState
@@ -6,7 +6,7 @@ from datetime import datetime
 from time import sleep
 import pandas as pd
 
-ProposedTradeGenerator = Generator[ProposedTrade, None, None]
+ProposedTradeIterator = Iterator[ProposedTrade]
 
 
 class Strategy (object):
@@ -45,7 +45,7 @@ class Strategy (object):
     def _propose_trades_to_fiat (self,
                                  coins: List[str],
                                  fiat_value_per_coin: float,
-                                 market_state: MarketState) -> ProposedTradeGenerator:
+                                 market_state: MarketState) -> ProposedTradeIterator:
         for coin in coins:
             if coin != self.fiat:
                 # Sell `coin` for `fiat`,
@@ -61,14 +61,14 @@ class Strategy (object):
     def _propose_trades_from_fiat (self,
                                    coins: Set[str],
                                    fiat_investment_per_coin: float,
-                                   market_state: MarketState) -> ProposedTradeGenerator:
+                                   market_state: MarketState) -> ProposedTradeIterator:
         for coin in coins:
             proposed = ProposedTrade(self.fiat, coin)
             proposed.set_bid_amount(fiat_investment_per_coin, market_state)
             yield proposed
 
 
-    def initial_proposed_trades (self, market_state: MarketState) -> ProposedTradeGenerator:
+    def initial_proposed_trades (self, market_state: MarketState) -> ProposedTradeIterator:
         '''
         "Initial" purchases are from fiat.
         (We assume funds start with only a fiat balance.)
