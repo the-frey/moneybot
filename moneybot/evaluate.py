@@ -1,5 +1,5 @@
 from typing import Tuple, List
-from moneybot.strategies import Strategy
+from moneybot.Fund import Fund
 
 import pandas as pd
 from datetime import timedelta
@@ -47,14 +47,14 @@ def summary (many_values: List[List[float]],
 
 # This needs to be a top-level method
 # So that it can be pickled by multiprocessing.Pool
-def backtest (strategy_dates: Tuple[Strategy, str, str]) -> List[float]:
-    strategy, start, end = strategy_dates
+def backtest (fund_dates: Tuple[Fund, str, str]) -> List[float]:
+    fund, start, end = fund_dates
     print('Testing from {!s} to {!s}'.format(start, end))
-    return list(strategy.begin_backtest(start, end))
+    return list(fund.begin_backtest(start, end))
 
 
 
-def evaluate (strategy: float,
+def evaluate (fund: Fund,
               start_date: str,
               end_date: str,
               duration_days = 90,
@@ -65,11 +65,11 @@ def evaluate (strategy: float,
     end = pd.Timestamp(end_date)
     start_times = pd.date_range(start, end, freq='{!s}d'.format(window_distance_days))
 
-    # We make tuples of (Strategy, Date, Date)
+    # We make tuples of (Fund, Date, Date)
     # This gets passed to `backtest()` using Pool().map()
     time_tuples = []
     for i, start_time in enumerate(start_times[:-1]):
-        time_tuple = (strategy, start_time, start_times[i+1])
+        time_tuple = (fund, start_time, start_times[i+1])
         time_tuples.append(time_tuple)
 
     with Pool(num_threads) as p:
