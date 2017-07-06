@@ -29,7 +29,7 @@ For an example of backtesting,
 
 You can view the strategies in `strategies/BuffedCoinStrategy.py` for an example, if you're interested in writing your own strategy!
 
-## live trading
+# live trading
 
 (**NOTE**: See disclaimer!)
 If you want to live-trade, 
