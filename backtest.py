@@ -1,11 +1,10 @@
 import json
-from fundrunner.Fund import Fund
-from fundrunner.market_adapters.BacktestMarketAdapter import BacktestMarketAdapter
-from fundrunner.strategies.BuyHoldStrategy import BuyHoldStrategy
-from fundrunner.strategies.BuffedCoinStrategy import BuffedCoinStrategy
-from fundrunner.strategies.PeakRiderStrategy import PeakRiderStrategy
-
-from fundrunner.evaluate import evaluate
+from moneybot.Fund import Fund
+from moneybot.market_adapters.BacktestMarketAdapter import BacktestMarketAdapter
+from moneybot.strategies.BuyHoldStrategy import BuyHoldStrategy
+from moneybot.strategies.BuffedCoinStrategy import BuffedCoinStrategy
+from moneybot.strategies.PeakRiderStrategy import PeakRiderStrategy
+from moneybot.evaluate import evaluate
 
 with open('config.json.example') as cfg_file:
 	config = json.load(cfg_file)

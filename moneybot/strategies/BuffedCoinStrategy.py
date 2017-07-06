@@ -1,14 +1,15 @@
+from typing import Dict
 from . import Strategy
 import numpy as np
 
 
 class BuffedCoinStrategy (Strategy):
 
-    def median (self, est_values):
+    def median (self, est_values: Dict[str, float]) -> float:
         return np.median(list(est_values.values()))
 
 
-    def is_buffed (self, coin, coin_values):
+    def is_buffed (self, coin: str, coin_values: Dict[str, float]) -> bool:
         # HACK HACK HACK HACK HACK
         # HACK magic number HACK
         # HACK HACK HACK HACK HACK

@@ -1,3 +1,4 @@
+from typing import Tuple, Dict
 from .BuffedCoinStrategy import BuffedCoinStrategy
 import numpy as np
 import pandas as pd
@@ -5,34 +6,35 @@ import pandas as pd
 
 class PeakRiderStrategy (BuffedCoinStrategy):
 
-    # PandasSeries -> (PandasSeries, PandasSeries)
-    def emas (self, price_series, shortw=96, longw=2400, **kwargs):
+    def emas (self, price_series: pd.Series,
+              shortw=96, longw=2400, **kwargs) -> Tuple[pd.Series, pd.Series]:
         long_ema  = price_series.ewm(com=longw).mean()
         short_ema = price_series.ewm(com=shortw).mean()
         return long_ema, short_ema
 
 
-    def percentage_price_oscillator (self, price_series, **kwargs):
+    def percentage_price_oscillator (self, price_series: pd.Series,
+                                     **kwargs) -> pd.Series:
         longe, shorte = self.emas(price_series, **kwargs)
         ppo           = (shorte - longe) / longe
         return ppo
 
 
-    # PandasSeries -> PandasSeries
-    def ppo_histogram (self, price_series, **kwargs):
+    def ppo_histogram (self, price_series: pd.Series,
+                       **kwargs) -> pd.DataFrame:
         ppo           = self.percentage_price_oscillator(price_series)
         ppo_ema       = ppo.ewm(com=9).mean()
         ppo_hist      = pd.DataFrame(ppo - ppo_ema)
         return ppo_hist
 
 
-    def latest_ppo_hist (self, price_series):
+    def latest_ppo_hist (self, price_series: pd.Series) -> float:
         ppo_hist = self.ppo_histogram(price_series)
         latest   = ppo_hist.iloc[-1].values[0]
         return latest
 
 
-    def is_buffed (self, coin, coin_values):
+    def is_buffed (self, coin: str, coin_values: Dict[str, float]) -> bool:
         # HACK HACK HACK HACK HACK
         # HACK magic number HACK
         # HACK HACK HACK HACK HACK
