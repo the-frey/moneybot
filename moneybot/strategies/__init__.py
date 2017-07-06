@@ -1,22 +1,23 @@
-from typing import Set, Dict, List, Iterator
-from ..ProposedTrade import ProposedTrade
-from ..MarketHistory import MarketHistory
-from ..MarketState import MarketState
-from datetime import datetime
-from time import sleep
-import pandas as pd
+# -*- coding: utf-8 -*-
+from abc import ABCMeta
+from abc import abstractmethod
+from typing import Dict
+from typing import Generator
+from typing import List
+from typing import Set
 
-ProposedTradeIterator = Iterator[ProposedTrade]
+from moneybot.ProposedTrade import ProposedTrade
+from moneybot.MarketHistory import MarketHistory
+from moneybot.MarketState import MarketState
 
 
-class Strategy (object):
-
+class Strategy(metaclass=ABCMeta):
     '''
     TODO Docstring
     how this is meant to be subclassed
     '''
 
-    def __init__ (self, config: Dict) -> None:
+    def __init__(self, config: Dict) -> None:
         self.config = config
         self.fiat = config['fiat']
         # Interval between trades, in seconds
@@ -26,26 +27,31 @@ class Strategy (object):
         # # MarketAdapter executes trades, fetches balances
         # self.MarketAdapter = MarketAdapter(self.config)
 
-    def propose_trades (self, market_state: MarketState, market_history: MarketHistory) -> List[ProposedTrade]:
+    @abstractmethod
+    def propose_trades(
+        self,
+        market_state: MarketState,
+        market_history: MarketHistory,
+    ) -> List[ProposedTrade]:
         raise NotImplementedError
-
 
     '''
     Trade proposal utilities
     '''
 
-    def _possible_investments (self, market_state: MarketState) -> Set[str]:
+    def _possible_investments(self, market_state: MarketState) -> Set[str]:
         '''
         Returns a set of all coins that the strategy might invest in,
         not including the fiat.
         '''
-        return market_state.available_coins() - set([ self.fiat ])
+        return market_state.available_coins() - {self.fiat}
 
-
-    def _propose_trades_to_fiat (self,
-                                 coins: List[str],
-                                 fiat_value_per_coin: float,
-                                 market_state: MarketState) -> ProposedTradeIterator:
+    def _propose_trades_to_fiat(
+        self,
+        coins: List[str],
+        fiat_value_per_coin: float,
+        market_state: MarketState,
+    ) -> Generator[ProposedTrade, None, None]:
         for coin in coins:
             if coin != self.fiat:
                 # Sell `coin` for `fiat`,
@@ -57,18 +63,21 @@ class Strategy (object):
                 if proposed.bid_amount > 0:
                     yield proposed
 
-
-    def _propose_trades_from_fiat (self,
-                                   coins: Set[str],
-                                   fiat_investment_per_coin: float,
-                                   market_state: MarketState) -> ProposedTradeIterator:
+    def _propose_trades_from_fiat(
+        self,
+        coins: Set[str],
+        fiat_investment_per_coin: float,
+        market_state: MarketState,
+    ) -> Generator[ProposedTrade, None, None]:
         for coin in coins:
             proposed = ProposedTrade(self.fiat, coin)
             proposed.set_bid_amount(fiat_investment_per_coin, market_state)
             yield proposed
 
-
-    def initial_proposed_trades (self, market_state: MarketState) -> ProposedTradeIterator:
+    def initial_proposed_trades(
+        self,
+        market_state: MarketState,
+    ) -> Generator[ProposedTrade, None, None]:
         '''
         "Initial" purchases are from fiat.
         (We assume funds start with only a fiat balance.)
@@ -76,18 +85,17 @@ class Strategy (object):
         across all "reachable" markets (markets in which the base currency is fiat).
         '''
         possible_investments = self._possible_investments(market_state)
-        fiat_investment_per_coin = market_state.balances[self.fiat] / ( len(possible_investments) + 1.0 )
+        fiat_investment_per_coin = market_state.balances[self.fiat] / (len(possible_investments) + 1.0)
         trades = self._propose_trades_from_fiat(possible_investments,
                                                 fiat_investment_per_coin,
                                                 market_state)
         return trades
 
-
-
-    def rebalancing_proposed_trades (self,
-                                     coins_to_rebalance: List[str],
-                                     market_state: MarketState) -> List[ProposedTrade]:
-
+    def rebalancing_proposed_trades(
+        self,
+        coins_to_rebalance: List[str],
+        market_state: MarketState,
+    ) -> List[ProposedTrade]:
         possible_investments = self._possible_investments(market_state)
         total_value = market_state.estimate_total_value()
         ideal_fiat_value_per_coin = total_value / len(possible_investments)
@@ -101,10 +109,10 @@ class Strategy (object):
         est_bals_after_fiat_trades = market_state.simulate_trades(proposed_trades_to_fiat)
 
         if self.fiat in coins_to_rebalance and len(proposed_trades_to_fiat) > 0:
-            fiat_after_trades        = est_bals_after_fiat_trades[self.fiat]
-            to_redistribute          = fiat_after_trades - ideal_fiat_value_per_coin
-            coins_divested_from      = [ proposed.from_coin for proposed in proposed_trades_to_fiat]
-            coins_to_buy             = possible_investments - set(coins_divested_from) - set( [self.fiat] )
+            fiat_after_trades = est_bals_after_fiat_trades[self.fiat]
+            to_redistribute = fiat_after_trades - ideal_fiat_value_per_coin
+            coins_divested_from = [proposed.from_coin for proposed in proposed_trades_to_fiat]
+            coins_to_buy = possible_investments - set(coins_divested_from) - {self.fiat}
             to_redistribute_per_coin = to_redistribute / len(coins_to_buy)
             proposed_trades_from_fiat = self._propose_trades_from_fiat(coins_to_buy,
                                                                        to_redistribute_per_coin,

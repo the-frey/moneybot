@@ -1,18 +1,22 @@
-from .MarketState import MarketState
+# -*- coding: utf-8 -*-
+from moneybot.MarketState import MarketState
 
-class ProposedTrade (object):
 
-    def __init__ (self, from_coin: str,
-                  to_coin: str,
-                  fiat='BTC',
-                  fee=0.0025) -> None:
+class ProposedTrade:
 
+    def __init__(
+        self,
+        from_coin: str,
+        to_coin: str,
+        fiat: str = 'BTC',
+        fee: float = 0.0025,
+    ) -> None:
         self.from_coin = from_coin
         self.to_coin = to_coin
         self.fiat = fiat
-        self.price = 0.
-        self.ask_amount = 0.
-        self.bid_amount = 0.
+        self.price = 0.0
+        self.ask_amount = 0.0
+        self.bid_amount = 0.0
         self.fee = fee
 
         # get the Poloniex market name
@@ -25,29 +29,30 @@ class ProposedTrade (object):
         elif to_coin == fiat:
             self.market_name = self._get_market_name(fiat, from_coin)
 
-
-    def __str__ (self):
+    def __str__(self) -> str:
         return '{!s} {!s} for {!s} {!s} (price of {!s} {!s}/{!s} on market {!s})'.format(
             self.bid_amount, self.from_coin,
             self.ask_amount, self.to_coin,
             self.price, self.from_coin, self.to_coin,
             self.market_name)
 
-
     '''
     Private methods
     '''
 
-    def _get_market_name (self,
-                          base: str,
-                          quote: str) -> str:
+    def _get_market_name(
+        self,
+        base: str,
+        quote: str,
+    ) -> str:
         ''' Return Poloniex market name'''
-        return '{!s}_{!s}'.format(base, quote)
+        return f'{base}_{quote}'
 
-
-    def _purchase_amount (self,
-                          investment: float,
-                          price: float) -> float:
+    def _purchase_amount(
+        self,
+        investment: float,
+        price: float,
+    ) -> float:
         '''
         Private method.
         Get the amount of some coin purchased,
@@ -57,14 +62,13 @@ class ProposedTrade (object):
         in_amt = investment - (investment * self.fee)
         return in_amt / price
 
-
     '''
     Utility methods
     '''
 
-    def estimate_price (self, market_state: MarketState) -> None:
+    def estimate_price(self, market_state: MarketState):
         '''
-        Returns the approximate price of the quote value, given some chart data.
+        Sets the approximate price of the quote value, given some chart data.
         '''
         base_price = market_state.price(self.market_name)
         # The price (when buying/selling)
@@ -77,10 +81,11 @@ class ProposedTrade (object):
         else:
             self.price = base_price
 
-
-    def set_bid_amount (self,
-                        amount: float,
-                        market_state: MarketState) -> None:
+    def set_bid_amount(
+        self,
+        amount: float,
+        market_state: MarketState,
+    ):
         '''
         Set how much `from_coin` we are putting on sale, by value.
 
@@ -97,10 +102,11 @@ class ProposedTrade (object):
         self.estimate_price(market_state)
         self.ask_amount = self._purchase_amount(amount, self.price)
 
-
-    def sell_to_achieve_value_of (self,
-                                  desired_value: float,
-                                  market_state: MarketState) -> None:
+    def sell_to_achieve_value_of(
+        self,
+        desired_value: float,
+        market_state: MarketState,
+    ) -> None:
         '''
         Sets `self.bid_amount`, `self.ask_amount`, `self.price`
         such that the proposed trade would leave us with a

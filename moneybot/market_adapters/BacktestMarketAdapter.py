@@ -1,16 +1,20 @@
+# -*- coding: utf-8 -*-
 from typing import Iterator
-from . import MarketAdapter
-from ..ProposedTrade import ProposedTrade
-from ..MarketState import MarketState
 
-class BacktestMarketAdapter (MarketAdapter):
+from moneybot.market_adapters import MarketAdapter
+from moneybot.MarketState import MarketState
+from moneybot.ProposedTrade import ProposedTrade
 
-    def get_balances (self) -> None:
+
+class BacktestMarketAdapter(MarketAdapter):
+
+    def get_balances(self):
         return self.balances
 
-    def execute (self,
-                 proposed_trades: Iterator[ProposedTrade],
-                 market_state: MarketState) -> None:
+    def execute(
+        self,
+        proposed_trades: Iterator[ProposedTrade],
+        market_state: MarketState,
+    ):
         balances = market_state.simulate_trades(proposed_trades)
         self.balances = balances
-

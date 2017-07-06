@@ -1,27 +1,35 @@
-from typing import List, Iterator
+# -*- coding: utf-8 -*-
+from abc import ABCMeta
+from abc import abstractmethod
 from datetime import datetime
-from ..MarketState import MarketState
-from ..ProposedTrade import ProposedTrade
+from typing import Generator
+from typing import Iterator
+from typing import List
 
-class MarketAdapter (object):
+from moneybot.MarketState import MarketState
+from moneybot.ProposedTrade import ProposedTrade
 
-    def __init__ (self, market_history, config):
+
+class MarketAdapter(metaclass=ABCMeta):
+
+    def __init__(self, market_history, config):
         self.MarketHistory = market_history
         self.balances = config['backtesting']['initial_balances']
         self.fiat = config['fiat']
 
-
-    def get_balances (self):
+    @abstractmethod
+    def get_balances(self):
         raise NotImplementedError
 
-
-    def execute (self,
-                 proposed_trades: Iterator[ProposedTrade],
-                 market_state: MarketState) -> None:
+    @abstractmethod
+    def execute(
+        self,
+        proposed_trades: Iterator[ProposedTrade],
+        market_state: MarketState,
+    ):
         raise NotImplementedError
 
-
-    def get_market_state (self, time: datetime) -> MarketState:
+    def get_market_state(self, time: datetime) -> MarketState:
         # Get the latest chart data from the market
         charts = self.MarketHistory.latest(time)
         balances = self.get_balances()
@@ -30,10 +38,11 @@ class MarketAdapter (object):
         market_state = MarketState(charts, balances, time, self.fiat)
         return market_state
 
-
-    def filter_legal (self,
-                      proposed_trades: List[ProposedTrade],
-                      market_state: MarketState) -> Iterator[ProposedTrade]:
+    def filter_legal(
+        self,
+        proposed_trades: List[ProposedTrade],
+        market_state: MarketState,
+    ) -> Generator[ProposedTrade, None, None]:
         '''
         Takes a list of ProposedTrade objects.
         Checks that each is a legal trade by the rules of our market.
@@ -42,11 +51,11 @@ class MarketAdapter (object):
             if self.is_legal(proposed, market_state):
                 yield proposed
 
-
-    def is_legal (self,
-                  proposed: ProposedTrade,
-                  market_state: MarketState) -> bool:
-
+    def is_legal(
+        self,
+        proposed: ProposedTrade,
+        market_state: MarketState,
+    ) -> bool:
         # TODO This is pretty Poloniex specific, so we might move it
         #      to a PoloniexMarketAdapter if we ever add more exchanges.
 
@@ -70,10 +79,10 @@ class MarketAdapter (object):
             return False
 
         # Check that the proposed trade minimum fiat trade amount.
-        if (proposed.from_coin == proposed.fiat and \
-            proposed.bid_amount < 0.0001) or \
-            (proposed.to_coin == proposed.fiat and \
-             proposed.ask_amount < 0.0001):
+        if (
+            (proposed.from_coin == proposed.fiat and proposed.bid_amount < 0.0001) or
+            (proposed.to_coin == proposed.fiat and proposed.ask_amount < 0.0001)
+        ):
             print('WARN: Filtering out proposed trade: transaction too small. Proposed',
                   str(proposed))
             return False

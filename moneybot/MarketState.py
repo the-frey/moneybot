@@ -1,80 +1,82 @@
-from typing import Dict, List, Tuple, Set
+# -*- coding: utf-8 -*-
 from datetime import datetime
+from typing import Dict
+from typing import List
+from typing import Set
+from typing import Tuple
 
-class MarketState (object):
 
+class MarketState:
     '''
     TODO Docstring
     '''
 
-    def __init__ (self,
-                  chart_data: Dict[str, float],
-                  balances: Dict[str, float],
-                  time: datetime,
-                  fiat: str) -> None:
+    def __init__(
+        self,
+        chart_data: Dict[str, float],
+        balances: Dict[str, float],
+        time: datetime,
+        fiat: str,
+    ) -> None:
         self.chart_data = chart_data
         self.balances = balances
         self.time = time
         self.fiat = fiat
 
-
     '''
     Private methods
     '''
 
-    def _held_coins (self) -> List[str]:
-        return [k  for k in self.balances.keys()
-                if self.balances[k] > 0 ]
+    def _held_coins(self) -> List[str]:
+        return [
+            k for k
+            in self.balances.keys()
+            if self.balances[k] > 0
+        ]
 
-
-    def _coin_names (self, market_name: str) -> Tuple[str, str]:
+    def _coin_names(self, market_name: str) -> Tuple[str, str]:
         coins = market_name.split('_')
         return coins[0], coins[1]
 
-
-    def _available_markets (self) -> Set[str]:
-        return set([ k for k in self.chart_data.keys()
-                     if k.startswith(self.fiat) ])
-
+    def _available_markets(self) -> Set[str]:
+        return {
+            k for k
+            in self.chart_data.keys()
+            if k.startswith(self.fiat)
+        }
 
     '''
     Public methods
     '''
 
-    def balance (self, coin: str) -> float:
+    def balance(self, coin: str) -> float:
         '''
         Returns the quantity of a coin held.
         '''
         return self.balances[coin]
 
-
     # TODO types
-    def price (self, market, key='weightedAverage'):
+    def price(self, market, key='weightedAverage'):
         '''
         Returns the price of a market, in terms of the base asset.
         '''
         return self.chart_data[market][key]
 
-
-    def only_holding (self, coin: str) -> bool:
+    def only_holding(self, coin: str) -> bool:
         '''
         Returns true if the only thing we are holding is `coin`
         '''
-        return self._held_coins() == [ coin ]
+        return self._held_coins() == [coin]
 
-
-    def available_coins (self) -> Set[str]:
+    def available_coins(self) -> Set[str]:
         markets = self._available_markets()
-        return set([ self._coin_names(market)[1]
-                     for market in markets ] + [ self.fiat ])
+        return {self._coin_names(market)[1] for market in markets} | {self.fiat}
 
-
-    def held_coins_with_chart_data (self) -> Set[str]:
+    def held_coins_with_chart_data(self) -> Set[str]:
         avail_coins = self.available_coins()
         return set(self._held_coins()).intersection(avail_coins)
 
-
-    def estimate_values (self, **kwargs) -> Dict[str, float]:
+    def estimate_values(self, **kwargs) -> Dict[str, float]:
         '''
         Returns a dict where keys are coin names,
         and values are the value of our holdings in fiat.
@@ -86,9 +88,9 @@ class MarketState (object):
                 if coin == self.fiat:
                     fiat_values[coin] = amount_held
                 else:
-                    relevant_market = '{!s}_{!s}'.format(self.fiat, coin)
+                    relevant_market = f'{self.fiat}_{coin}'
                     fiat_price = self.price(relevant_market, **kwargs)
-                    fiat_values[coin] =  fiat_price * amount_held
+                    fiat_values[coin] = fiat_price * amount_held
             except KeyError:
                 # Remove the coin -- it has been delisted.
                 remove.append(coin)
@@ -96,25 +98,22 @@ class MarketState (object):
             self.balances.pop(removal)
         return fiat_values
 
-
-    def estimate_total_value (self, **kwargs) -> float:
+    def estimate_total_value(self, **kwargs) -> float:
         '''
-        Returns the sume of all holding values, in fiat.
+        Returns the sum of all holding values, in fiat.
         '''
         return sum(self.estimate_values(**kwargs).values())
 
-
-    def estimate_total_value_usd (self, **kwargs) -> float:
+    def estimate_total_value_usd(self, **kwargs) -> float:
         '''
         Returns the sum of all holding values, in USD.
         '''
         est = self.estimate_total_value() * self.price('USD_BTC', **kwargs)
         return round(est, 2)
 
-
     # TODO Not sure this really belongs here
     #       maybe more the job of BacktestMarketAdapter
-    def simulate_trades (self, proposed_trades):
+    def simulate_trades(self, proposed_trades):
         '''
         TODO Docstring
 
@@ -125,7 +124,7 @@ class MarketState (object):
         and use that to make more realistic simulations~!
         (after all, our proposed price will not always be achievable)
         '''
-        def simulate (proposed, new_balances):
+        def simulate(proposed, new_balances):
             # TODO This makes sense as logic, but new_balances is confusing
             new_balances[proposed.from_coin] -= proposed.bid_amount
             if proposed.to_coin not in new_balances:

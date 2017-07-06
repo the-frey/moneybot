@@ -1,56 +1,63 @@
-from typing import List, Dict
-import pandas as pd
-from influxdb import InfluxDBClient
-from poloniex import Poloniex
+# -*- coding: utf-8 -*-
 import time
+from typing import List, Dict
 from datetime import datetime
 from dateutil import parser
-from funcy import compose, partial
+
 import requests
-import json
+import pandas as pd
+from funcy import compose
+from influxdb import InfluxDBClient
+from poloniex import Poloniex
+
+
 YEAR = 60 * 60 * 24 * 365
-YEAR_AGO = time.time()-YEAR
+YEAR_AGO = time.time() - YEAR
 
 
-def scrape_since_last_reading (client: InfluxDBClient) -> None:
+def format_time(ts: datetime) -> str:
+    return ts.strftime('%Y-%m-%d %H:%M:%S')
 
-    polo     = Poloniex()
-    strftime = lambda ts: ts.strftime('%Y-%m-%d %H:%M:%S')
 
-    def historical (ticker: str) -> Dict:
-        url =  'https://graphs.coinmarketcap.com/currencies/{!s}'.format(ticker)
+def scrape_since_last_reading(client: InfluxDBClient):
+    polo = Poloniex()
+
+    def historical(ticker: str) -> Dict:
+        url = f'https://graphs.coinmarketcap.com/currencies/{ticker}'
         return requests.get(url).json()
 
-
-    def market_cap (hist_ticker: Dict) -> pd.Series:
+    def market_cap(hist_ticker: Dict) -> pd.Series:
         r = {}
         ts = None
         for key, vals in hist_ticker.items():
             if ts is None:
-                ts = [pd.to_datetime(t[0]*1000000) for t in vals]
+                ts = [pd.to_datetime(t[0] * 1000000) for t in vals]
             r[key] = [t[1] for t in vals]
         return pd.DataFrame(r, index=ts)
-
 
     coin_history = compose(market_cap, historical)
     btc_price_hist = coin_history('bitcoin')
 
-    def scraped_chart (currency_pair: str,
-                       row: pd.Series) -> Dict:
+    def scraped_chart(currency_pair: str, row: pd.Series) -> Dict:
         return {
             'measurement': 'scrapedChart',
             'tags': {
                 'currencyPair': currency_pair,
             },
-            'time': strftime(row.name),
+            'time': format_time(row.name),
             'fields': row.to_dict(),
         }
 
+    def contemporary_usd_price(row) -> float:
+        contemporary_btc_price = btc_price_hist['price_usd'].asof(row.name)
+        return row['weightedAverage'] * contemporary_btc_price
 
-    def historical_prices_of (pair: str,
-                              period=900,
-                              start=YEAR_AGO,
-                              end=time.time()) -> pd.Series:
+    def historical_prices_of(
+        pair: str,
+        period=900,
+        start=YEAR_AGO,
+        end=time.time(),
+    ) -> pd.Series:
         '''
         Returns a series of time-indexed prices.
 
@@ -65,8 +72,6 @@ def scrape_since_last_reading (client: InfluxDBClient) -> None:
         ts_df.index = [datetime.fromtimestamp(t)
                        for t in ts_df['date']]
         ts_df = ts_df.drop(['date'], axis=1)
-        contemporary_btc_price = lambda row: btc_price_hist['price_usd'].asof(row.name)
-        contemporary_usd_price = lambda row: row['weightedAverage']*contemporary_btc_price(row)
         ts_df['price_usd'] = ts_df.apply(contemporary_usd_price, axis=1)
         for _, row in ts_df.iterrows():
             chart = scraped_chart(pair, row)
@@ -77,7 +82,6 @@ def scrape_since_last_reading (client: InfluxDBClient) -> None:
                 pass
             else:
                 yield chart
-
 
     # get the most recent chart data
     # already fetched from the db
@@ -108,10 +112,9 @@ def scrape_since_last_reading (client: InfluxDBClient) -> None:
         client.write_points(generator)
         print('scraped', market)
         # except:
-            # print('error scraping market', market)
+        #     print('error scraping market', market)
 
-
-    def marshall (hist_df, key='price_btc'):
+    def marshall(hist_df, key='price_btc'):
         btc_to_usd = hist_df['price_usd'] / hist_df['price_btc']
         # volume in BTC
         hist_df['volume'] = hist_df['volume_usd'] / btc_to_usd
@@ -128,21 +131,22 @@ def scrape_since_last_reading (client: InfluxDBClient) -> None:
                         for _, row in btc_rows.iterrows())
     print('scraped USD_BTC')
 
-class MarketHistory (object):
 
+class MarketHistory:
     '''
     TODO Docstring
     '''
 
-    def __init__ (self, config: Dict) -> None:
-        self.client = InfluxDBClient(config['db']['hostname'],
-                                     config['db']['port'],
-                                     config['db']['username'],
-                                     config['db']['password'],
-                                     config['db']['database'])
+    def __init__(self, config: Dict) -> None:
+        self.client = InfluxDBClient(
+            config['db']['hostname'],
+            config['db']['port'],
+            config['db']['username'],
+            config['db']['password'],
+            config['db']['database'],
+        )
 
-
-    def scrape_latest (self) -> None:
+    def scrape_latest(self) -> None:
         return scrape_since_last_reading(self.client)
 
     # String -> { 'BTC_ETH': { weightedAverage, ...} ...}
@@ -152,9 +156,8 @@ class MarketHistory (object):
     # We could, in the future, address this by taking all the candlesticks since we last checked
     # and pass them through to the strategy together, sorted ny time.
     # Then, the strategy can then decide how to combine them.
-    def latest (self,
-                time: str) -> Dict[str, Dict[str, float]]:
-        q ='''
+    def latest(self, time: str) -> Dict[str, Dict[str, float]]:
+        q = '''
         select * from scrapedChart
         where time <= '{!s}' and time > '{!s}' - 1d
         group by currencyPair
@@ -162,26 +165,30 @@ class MarketHistory (object):
         limit 1
         '''.format(time, time)
         result_set = self.client.query(q)
-        coin_generator_tuples = { r[0][1]['currencyPair']: list(r[1])[0]
-                                 for r in result_set.items() }
+        coin_generator_tuples = {
+            r[0][1]['currencyPair']: list(r[1])[0]
+            for r
+            in result_set.items()
+        }
         return coin_generator_tuples
 
-
-    def asset_history (self,
-                       time: str,
-                       base: str,
-                       quote: str,
-                       days_back=30,
-                       key='price_usd') -> List[float]:
-        currency_pair = '{!s}_{!s}'.format(base, quote)
-        q ='''
+    def asset_history(
+        self,
+        time: str,
+        base: str,
+        quote: str,
+        days_back=30,
+        key='price_usd',
+    ) -> List[float]:
+        currency_pair = f'{base}_{quote}'
+        q = '''
         select * from scrapedChart
         where currencyPair='{!s}'
         and time <= '{!s}' and time > '{!s}' - {!s}d
         order by time desc
         '''.format(currency_pair, time, time, days_back)
         result_set = self.client.query(q)
-        prices     = [(p['time'], p[key]) for p in result_set.get_points()]
+        prices = [(p['time'], p[key]) for p in result_set.get_points()]
         df = pd.Series([p[1] for p in prices])
         df.index = [p[0] for p in prices]
         return df

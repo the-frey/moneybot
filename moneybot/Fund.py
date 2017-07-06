@@ -1,33 +1,37 @@
-from typing import Dict, Iterator, Type
-from .market_adapters import MarketAdapter
-from .strategies import Strategy
-from .MarketHistory import MarketHistory
+# -*- coding: utf-8 -*-
 from datetime import datetime
-from time import sleep, time
+from time import sleep
+from time import time
+from typing import Dict
+from typing import Generator
+from typing import Type
+
 import pandas as pd
 
+from moneybot.market_adapters import MarketAdapter
+from moneybot.MarketHistory import MarketHistory
+from moneybot.strategies import Strategy
 
-class Fund (object):
 
+class Fund:
     '''
     TODO Docstring
     '''
 
-    def __init__ (self,
-                  strat: Type[Strategy],
-                  market_adapter: Type[MarketAdapter],
-                  config: Dict) -> None:
+    def __init__(
+        self,
+        strat: Type[Strategy],
+        market_adapter: Type[MarketAdapter],
+        config: Dict,
+    ) -> None:
         self.config = config
         self.Strategy = strat(self.config)
         # MarketHistory stores historical market data
         self.MarketHistory = MarketHistory(self.config)
         # MarketAdapter executes trades, fetches balances
-        self.MarketAdapter = market_adapter(self.MarketHistory,
-                                            self.config)
+        self.MarketAdapter = market_adapter(self.MarketHistory, self.config)
 
-
-    def step (self,
-              time: datetime) -> float:
+    def step(self, time: datetime) -> float:
         market_state = self.MarketAdapter.get_market_state(time)
         # Now, propose trades. If you're writing a strategy, you will override this method.
         proposed_trades = self.Strategy.propose_trades(market_state, self.MarketHistory)
@@ -53,9 +57,8 @@ class Fund (object):
         usd_value = market_state.estimate_total_value_usd()
         return usd_value
 
-
-    def run_live (self) -> None:
-        starttime=time()
+    def run_live(self):
+        start_time = time()
         PERIOD = self.Strategy.trade_interval
         while True:
             # Get time loop starts, so
@@ -73,24 +76,27 @@ class Fund (object):
             print('Est. USD value', usd_val)
             # Wait until our next time to run,
             # Accounting for the time that this step took to run
-            sleep(PERIOD - ((time() - starttime) % PERIOD))
+            sleep(PERIOD - ((time() - start_time) % PERIOD))
 
-
-    def begin_backtest (self,
-                        start_time: str,
-                        end_time: str) -> Iterator[float]:
+    def begin_backtest(
+        self,
+        start_time: str,
+        end_time: str,
+    ) -> Generator[float, None, None]:
         '''
         Takes a start time and end time (as parse-able date strings).
 
-        Returns a list of USD values for each point (trade interval)
-        between start and end.
+        Returns a generator over a list of USD values for each point (trade
+        interval) between start and end.
         '''
         # MarketAdapter executes trades
         # Set up the historical coinstore
         # A series of trade-times to run each of our strategies through.
-        dates = pd.date_range(pd.Timestamp(start_time),
-                              pd.Timestamp(end_time),
-                              freq='{!s}S'.format(self.Strategy.trade_interval))
+        dates = pd.date_range(
+            pd.Timestamp(start_time),
+            pd.Timestamp(end_time),
+            freq='{!s}S'.format(self.Strategy.trade_interval),
+        )
         for date in dates:
             val = self.step(date)
             yield val

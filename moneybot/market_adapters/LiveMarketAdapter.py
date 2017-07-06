@@ -1,77 +1,79 @@
-from typing import Dict, Callable, Iterator
-from . import MarketAdapter
-from ..MarketState import MarketState
-from ..ProposedTrade import ProposedTrade
-from poloniex import Poloniex
-from time import sleep
-from functools import partial
+# -*- coding: utf-8 -*-
 import operator
+from functools import partial
+from typing import Callable
+from typing import Dict
+from typing import Iterator
 
-class LiveMarketAdapter (MarketAdapter):
+from poloniex import Poloniex
 
-    def __init__ (self,
-                  market_history: MarketState,
-                  config: Dict) -> None:
+from moneybot.market_adapters import MarketAdapter
+from moneybot.MarketState import MarketState
+from moneybot.ProposedTrade import ProposedTrade
+
+
+class LiveMarketAdapter(MarketAdapter):
+
+    def __init__(
+        self,
+        market_history: MarketState,
+        config: Dict,
+    ) -> None:
         self.polo = Poloniex(config['livetrading']['poloniex']['pk'],
                              config['livetrading']['poloniex']['sk'])
         self.MarketHistory = market_history
         self.balances = self.get_balances()
         self.fiat = config['fiat']
 
-
-    def get_balances (self) -> Dict[str, float]:
+    def get_balances(self) -> Dict[str, float]:
         bals = self.polo.returnCompleteBalances()
         all_balances = {}
         for coin, bal, in bals.items():
             avail = float(bal['available'])
-            if  avail > 0:
+            if avail > 0:
                 all_balances[coin] = avail
         return all_balances
 
-
-    def execute (self,
-                 proposed_trades: Iterator[ProposedTrade],
-                 market_state: MarketState) -> None:
+    def execute(
+        self,
+        proposed_trades: Iterator[ProposedTrade],
+        market_state: MarketState,
+    ):
         for trade in proposed_trades:
             self._place_order(trade, market_state)
         self.balances = self.get_balances()
-
 
     '''
     Private methods
     '''
 
-
-    def _adjust (self,
-                 val: float,
-                 operator: Callable,
-                 tweak = 0.001) -> float:
+    def _adjust(
+        self,
+        val: float,
+        operator: Callable,
+        tweak: float = 0.001,
+    ) -> float:
         '''
         Pass in `operator.__add__`
         or `operator.__sub__`
         to move `val` up or down by `tweak`.
         '''
-        return operator(val, (val*tweak))
+        return operator(val, (val * tweak))
 
-
-    def _adjust_up (self,
-                    val: float,
-                    **kwargs) -> float:
+    def _adjust_up(self, val: float, **kwargs) -> float:
         return self._adjust(val, operator.__add__, **kwargs)
 
-
-    def _adjust_down (self,
-                      val: float,
-                      **kwargs) -> float:
+    def _adjust_down(self, val: float, **kwargs) -> float:
         return self._adjust(val, operator.__sub__, **kwargs)
 
-    # String, String, Float, Float, String -> Dict
-    def _proposed_trade_measurement (self,
-                                     direction: str,
-                                     market: str,
-                                     price: float,
-                                     amount: float,
-                                     order_status: str) -> Dict:
+    def _proposed_trade_measurement(
+        self,
+        direction: str,
+        market: str,
+        price: float,
+        amount: float,
+        order_status: str,
+    ) -> Dict:
         return {
             'measurement': 'proposedTrade',
             'tags': {
@@ -85,14 +87,15 @@ class LiveMarketAdapter (MarketAdapter):
             }
         }
 
-
-    def _purchase_helper (self,
-                          direction: str,
-                          market: str,
-                          price: float,
-                          amount: float,
-                          purchase_fn: Callable,
-                          adjust_fn: Callable) -> Dict:
+    def _purchase_helper(
+        self,
+        direction: str,
+        market: str,
+        price: float,
+        amount: float,
+        purchase_fn: Callable,
+        adjust_fn: Callable,
+    ) -> Dict:
         make_measurement = partial(self._proposed_trade_measurement,
                                    direction, market, price, amount)
         try:
@@ -101,7 +104,8 @@ class LiveMarketAdapter (MarketAdapter):
                 price,
                 amount,
                 # Cancel order if not fulfilled in entirity at this price
-                orderType = 'fillOrKill')
+                orderType='fillOrKill',
+            )
             measurement = make_measurement('filled')
             print(measurement)
         # If we can't fill the order at this price,
@@ -120,11 +124,11 @@ class LiveMarketAdapter (MarketAdapter):
             )
         return res
 
-
-    def _place_order (self,
-                      proposed_trade: ProposedTrade,
-                      market_state: MarketState) -> Dict:
-
+    def _place_order(
+        self,
+        proposed_trade: ProposedTrade,
+        market_state: MarketState,
+    ) -> Dict:
         # if we're trading FROM fiat, that's a "sell"
         if proposed_trade.from_coin == market_state.fiat:
             return self._purchase_helper(
