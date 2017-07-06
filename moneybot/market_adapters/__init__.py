@@ -15,7 +15,7 @@ class MarketAdapter (object):
 
 
     def execute (self,
-                 proposed_trades: List[ProposedTrade],
+                 proposed_trades: Generator[ProposedTrade, None, None],
                  market_state: MarketState) -> None:
         raise NotImplementedError
 

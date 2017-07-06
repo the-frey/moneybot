@@ -1,4 +1,4 @@
-from typing import List
+from typing import Generator
 from . import MarketAdapter
 from ..ProposedTrade import ProposedTrade
 from ..MarketState import MarketState
@@ -9,7 +9,7 @@ class BacktestMarketAdapter (MarketAdapter):
         return self.balances
 
     def execute (self,
-                 proposed_trades: List[ProposedTrade],
+                 proposed_trades: Generator[ProposedTrade, None, None],
                  market_state: MarketState) -> None:
         balances = market_state.simulate_trades(proposed_trades)
         self.balances = balances

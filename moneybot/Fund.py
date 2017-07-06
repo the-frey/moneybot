@@ -1,3 +1,6 @@
+from typing import Dict, Generator, Type
+from .market_adapters import MarketAdapter
+from .strategies import Strategy
 from .MarketHistory import MarketHistory
 from datetime import datetime
 from time import sleep, time
@@ -10,17 +13,22 @@ class Fund (object):
     TODO Docstring
     '''
 
-    def __init__ (self, Strategy, MarketAdapter, config):
+    def __init__ (self,
+                  strat: Type[Strategy],
+                  market_adapter: Type[MarketAdapter],
+                  config: Dict) -> None:
         self.config = config
-        self.Strategy = Strategy(self.config)
+        self.Strategy = strat(self.config)
         # MarketHistory stores historical market data
         self.MarketHistory = MarketHistory(self.config)
         # MarketAdapter executes trades, fetches balances
-        self.MarketAdapter = MarketAdapter(self.MarketHistory, self.config)
+        self.MarketAdapter = market_adapter(self.MarketHistory,
+                                            self.config)
 
 
-    def step (self, time):
-        market_state = self.MarketAdapter.get_market_state(time)
+    def step (self,
+              time: datetime) -> float:
+        market_state = self.MarketAdapter.get_market_state(str(time))
         # Now, propose trades. If you're writing a strategy, you will override this method.
         proposed_trades = self.Strategy.propose_trades(market_state, self.MarketHistory)
         # If the strategy proposed any trades, we execute them.
@@ -38,14 +46,15 @@ class Fund (object):
             # at the best price we can.
             # In either case, this method is side-effect-y;
             # it sets MarketAdapter.balances, after all trades have been executed.
-            self.MarketAdapter.execute(assumed_legal_trades, market_state)
+            self.MarketAdapter.execute(assumed_legal_trades,
+                                       market_state)
         # Finally, we get the USD value of our whole fund,
         # now that all trades (if there were any) have been executed.
         usd_value = market_state.estimate_total_value_usd()
         return usd_value
 
 
-    def run_live (self):
+    def run_live (self) -> None:
         starttime=time()
         PERIOD = self.Strategy.trade_interval
         while True:
@@ -67,8 +76,9 @@ class Fund (object):
             sleep(PERIOD - ((time() - starttime) % PERIOD))
 
 
-    # self, str, str => List<Float>
-    def begin_backtest (self, start_time, end_time):
+    def begin_backtest (self,
+                        start_time: str,
+                        end_time: str) -> Generator[float, None, None]:
         '''
         Takes a start time and end time (as parse-able date strings).
 

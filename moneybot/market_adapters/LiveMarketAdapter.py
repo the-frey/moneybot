@@ -1,4 +1,4 @@
-from typing import Dict, Callable, List, Any
+from typing import Dict, Callable, Generator
 from . import MarketAdapter
 from ..MarketState import MarketState
 from ..ProposedTrade import ProposedTrade
@@ -30,7 +30,7 @@ class LiveMarketAdapter (MarketAdapter):
 
 
     def execute (self,
-                 proposed_trades: List[ProposedTrade],
+                 proposed_trades: Generator[ProposedTrade, None, None],
                  market_state: MarketState) -> None:
         for trade in proposed_trades:
             self._place_order(trade, market_state)
