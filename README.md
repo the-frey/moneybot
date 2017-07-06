@@ -21,7 +21,9 @@ See [Restoring influxDB](https://docs.influxdata.com/influxdb/v1.2/administratio
 
 # use
 
-For an example of backtesting.
+First, make sure Influx is running.
+
+For an example of backtesting,
 
     python3 backtest.py
 
@@ -29,6 +31,7 @@ You can view the strategies in `strategies/BuffedCoinStrategy.py` for an example
 
 ## live trading
 
+(**NOTE**: See disclaimer!)
 If you want to live-trade, 
 you will need Poloniex API keys. You can [generate those via the Poloniex web interface](https://www.youtube.com/watch?v=OScIbgXZoW0).
 You'll only need to allow "trading" permissions on the keys.
@@ -36,9 +39,7 @@ See the `config.json.example` file, add your Poloniex api keys and save it as `c
 
 For an example, see `live_trading.py`
 
-**NOTE**: *You alone* are responsible for anything that happens when you're live-trading. Backtests are no guarantee of live performance. **Use at your own risk, don't say we didn't warn you!**
-
-## disclaimer
+# disclaimer
 
 Use MoneyBot AT YOUR OWN RISK. Specifically, 
 
@@ -48,6 +49,7 @@ Use MoneyBot AT YOUR OWN RISK. Specifically,
 - Running a bot, and trading in general, requires careful study of the risks, and parameters. Wrong settings can cause a major loss.
 - Never leave MoneyBot un-monitored for long periods of time. Be prepared to stop it if too much loss occurs.
 
+*You alone* are responsible for anything that happens when you're live-trading!
 
 # license
 
