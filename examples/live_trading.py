@@ -42,7 +42,7 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '-s', '--strategy',
-        default='buffed_coin',
+        default='buffed-coin',
         type=str,
         choices=strategies.keys(),
     )
