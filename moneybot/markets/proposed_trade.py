@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
+from logging import getLogger
+
 from moneybot.markets.state import MarketState
+
+
+logger = getLogger(__name__)
 
 
 class ProposedTrade:
@@ -77,7 +82,7 @@ class ProposedTrade:
         # self.price is always in the quote currency.
         self.market_price = base_price
         if self.to_coin == self.fiat:
-            self.price = (1 / base_price)
+            self.price = 1 / base_price
         else:
             self.price = base_price
 
@@ -114,12 +119,15 @@ class ProposedTrade:
         '''
         self.estimate_price(market_state)
         if not self.price:
-            print('ERROR: Must set a price for ProposedTrade, or pass a chart object into estimate_price_with')
+            logger.error(
+                'Must set a price for ProposedTrade, or pass a chart object '
+                'into estimate_price_with'
+            )
             raise
         # After rebalance, we want the value of the coin we're trading to
         # to be equal to the ideal value (in fiat).
         # First we'll find the value of the coin we currently hold.
-        current_value = (market_state.balance(self.from_coin) * self.price)
+        current_value = market_state.balance(self.from_coin) * self.price
         # To find how much coin we want to sell,
         # we'll subtract our holding's value from the ideal value
         # to produce the value of coin we must sell

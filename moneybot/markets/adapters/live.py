@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import operator
 from functools import partial
+from logging import getLogger
 from typing import Callable
 from typing import Dict
 from typing import Iterator
@@ -12,6 +13,9 @@ from moneybot.markets.proposed_trade import ProposedTrade
 from moneybot.markets.state import MarketState
 
 
+logger = getLogger(__name__)
+
+
 class LiveMarketAdapter(MarketAdapter):
 
     def __init__(
@@ -21,7 +25,7 @@ class LiveMarketAdapter(MarketAdapter):
     ) -> None:
         self.polo = Poloniex(config['livetrading']['poloniex']['pk'],
                              config['livetrading']['poloniex']['sk'])
-        self.MarketHistory = market_history
+        self.market_history = market_history
         self.balances = self.get_balances()
         self.fiat = config['fiat']
 
@@ -107,11 +111,11 @@ class LiveMarketAdapter(MarketAdapter):
                 orderType='fillOrKill',
             )
             measurement = make_measurement('filled')
-            print(measurement)
+            logger.debug(str(measurement))
         # If we can't fill the order at this price,
         except:
             measurement = make_measurement('killed')
-            print(measurement)
+            logger.debug(str(measurement))
             # recursively again at a (higher / lower) price
             adjusted_price = adjust_fn(price)
             return self._purchase_helper(

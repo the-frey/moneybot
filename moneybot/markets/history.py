@@ -1,18 +1,24 @@
 # -*- coding: utf-8 -*-
 import time
-from typing import List, Dict
 from datetime import datetime
 from dateutil import parser
+from logging import getLogger
+from typing import Dict
+from typing import List
+from typing import Optional
 
 import requests
-import pandas as pd
 from funcy import compose
 from influxdb import InfluxDBClient
+from pandas import DataFrame
+from pandas import Series
+from pandas import to_datetime
 from poloniex import Poloniex
 
 
-YEAR = 60 * 60 * 24 * 365
-YEAR_AGO = time.time() - YEAR
+YEAR_IN_SECS = 60 * 60 * 24 * 365
+
+logger = getLogger(__name__)
 
 
 def format_time(ts: datetime) -> str:
@@ -26,19 +32,19 @@ def scrape_since_last_reading(client: InfluxDBClient):
         url = f'https://graphs.coinmarketcap.com/currencies/{ticker}'
         return requests.get(url).json()
 
-    def market_cap(hist_ticker: Dict) -> pd.Series:
+    def market_cap(hist_ticker: Dict) -> Series:
         r = {}
         ts = None
         for key, vals in hist_ticker.items():
             if ts is None:
-                ts = [pd.to_datetime(t[0] * 1000000) for t in vals]
+                ts = [to_datetime(t[0] * 1000000) for t in vals]
             r[key] = [t[1] for t in vals]
-        return pd.DataFrame(r, index=ts)
+        return DataFrame(r, index=ts)
 
     coin_history = compose(market_cap, historical)
     btc_price_hist = coin_history('bitcoin')
 
-    def scraped_chart(currency_pair: str, row: pd.Series) -> Dict:
+    def scraped_chart(currency_pair: str, row: Series) -> Dict:
         return {
             'measurement': 'scrapedChart',
             'tags': {
@@ -54,10 +60,10 @@ def scrape_since_last_reading(client: InfluxDBClient):
 
     def historical_prices_of(
         pair: str,
-        period=900,
-        start=YEAR_AGO,
-        end=time.time(),
-    ) -> pd.Series:
+        period: int = 900,
+        start: Optional[float] = None,
+        end: Optional[float] = None,
+    ) -> Series:
         '''
         Returns a series of time-indexed prices.
 
@@ -65,12 +71,13 @@ def scrape_since_last_reading(client: InfluxDBClient):
         `period` is an integer number of seconds,
         either 300, 900, 1800, 7200, 14400, or 86400.
         '''
-        ex_trades = polo.returnChartData(pair,
-                                         period,
-                                         start, end)
-        ts_df = pd.DataFrame(ex_trades, dtype=float)
-        ts_df.index = [datetime.fromtimestamp(t)
-                       for t in ts_df['date']]
+        now = time.time()
+        start = start or now - YEAR_IN_SECS
+        end = end or now
+
+        ex_trades = polo.returnChartData(pair, period, start, end)
+        ts_df = DataFrame(ex_trades, dtype=float)
+        ts_df.index = [datetime.fromtimestamp(t) for t in ts_df['date']]
         ts_df = ts_df.drop(['date'], axis=1)
         ts_df['price_usd'] = ts_df.apply(contemporary_usd_price, axis=1)
         for _, row in ts_df.iterrows():
@@ -98,21 +105,22 @@ def scrape_since_last_reading(client: InfluxDBClient):
         list(latest_result.get_points())[0]['time'])
 
     # convert from string to unix time
-    latest_fetch_unix = time.mktime(
-        latest_fetch_time.timetuple())
+    latest_fetch_unix = time.mktime(latest_fetch_time.timetuple())
 
     # for each market,
     for market in polo.returnTicker():
         # fetch all the chart data
         # since that last fetch.
         # try:
-        generator = historical_prices_of(market,
-                                         start=latest_fetch_unix,
-                                         end=time.time())
+        generator = historical_prices_of(
+            market,
+            start=latest_fetch_unix,
+            end=time.time(),
+        )
         client.write_points(generator)
-        print('scraped', market)
+        logger.debug(f'Scraped {market}')
         # except:
-        #     print('error scraping market', market)
+        #     logger.error(f'error scraping market: {market}')
 
     def marshall(hist_df, key='price_btc'):
         btc_to_usd = hist_df['price_usd'] / hist_df['price_btc']
@@ -129,7 +137,7 @@ def scrape_since_last_reading(client: InfluxDBClient):
     btc_rows = marshall(btc_price_hist, key='price_usd')
     client.write_points(scraped_chart('USD_BTC', row)
                         for _, row in btc_rows.iterrows())
-    print('scraped USD_BTC')
+    logger.debug('Scraped USD_BTC')
 
 
 class MarketHistory:
@@ -189,6 +197,6 @@ class MarketHistory:
         '''.format(currency_pair, time, time, days_back)
         result_set = self.client.query(q)
         prices = [(p['time'], p[key]) for p in result_set.get_points()]
-        df = pd.Series([p[1] for p in prices])
+        df = Series([p[1] for p in prices])
         df.index = [p[0] for p in prices]
         return df

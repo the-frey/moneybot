@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
+from logging import getLogger
 from time import sleep
 from time import time
 from typing import Dict
@@ -11,6 +12,9 @@ import pandas as pd
 from moneybot.markets.adapters import MarketAdapter
 from moneybot.markets.history import MarketHistory
 from moneybot.strategies import Strategy
+
+
+logger = getLogger(__name__)
 
 
 class Fund:
@@ -25,16 +29,16 @@ class Fund:
         config: Dict,
     ) -> None:
         self.config = config
-        self.Strategy = strat(self.config)
+        self.strategy = strat(self.config)
         # MarketHistory stores historical market data
-        self.MarketHistory = MarketHistory(self.config)
+        self.market_history = MarketHistory(self.config)
         # MarketAdapter executes trades, fetches balances
-        self.MarketAdapter = market_adapter(self.MarketHistory, self.config)
+        self.market_adapter = market_adapter(self.market_history, self.config)
 
     def step(self, time: datetime) -> float:
-        market_state = self.MarketAdapter.get_market_state(time)
+        market_state = self.market_adapter.get_market_state(time)
         # Now, propose trades. If you're writing a strategy, you will override this method.
-        proposed_trades = self.Strategy.propose_trades(market_state, self.MarketHistory)
+        proposed_trades = self.strategy.propose_trades(market_state, self.market_history)
         # If the strategy proposed any trades, we execute them.
         if proposed_trades:
             # The user's propose_trades() method could be returning anything,
@@ -43,15 +47,17 @@ class Fund:
             # `filter_legal()` will throw informative warnings if any trades
             # get filtered out!
             # TODO Can the Strategy get access to this sanity checker?
-            assumed_legal_trades = self.MarketAdapter.filter_legal(proposed_trades, market_state)
+            assumed_legal_trades = self.market_adapter.filter_legal(
+                proposed_trades,
+                market_state,
+            )
             # Finally, the MarketAdapter will execute our trades.
             # If we're backtesting, these trades won't really happen.
             # If we're trading for real, we will attempt to execute the proposed trades
             # at the best price we can.
             # In either case, this method is side-effect-y;
             # it sets MarketAdapter.balances, after all trades have been executed.
-            self.MarketAdapter.execute(assumed_legal_trades,
-                                       market_state)
+            self.market_adapter.execute(assumed_legal_trades, market_state)
         # Finally, we get the USD value of our whole fund,
         # now that all trades (if there were any) have been executed.
         usd_value = market_state.estimate_total_value_usd()
@@ -59,7 +65,7 @@ class Fund:
 
     def run_live(self):
         start_time = time()
-        PERIOD = self.Strategy.trade_interval
+        PERIOD = self.strategy.trade_interval
         while True:
             # Get time loop starts, so
             # we can account for the time
@@ -68,12 +74,12 @@ class Fund:
             # Before anything,
             # scrape poloniex
             # to make sure we have freshest data
-            self.MarketHistory.scrape_latest()
+            self.market_history.scrape_latest()
             # Now the fund can step()
-            print('Fund.step({!s})'.format(cur_time))
+            logger.info(f'Fund::step({cur_time})')
             usd_val = self.step(cur_time)
             # After its step, we have got the USD value.
-            print('Est. USD value', usd_val)
+            logger.info(f'Est. USD value: {usd_val}')
             # Wait until our next time to run,
             # Accounting for the time that this step took to run
             sleep(PERIOD - ((time() - start_time) % PERIOD))
@@ -95,7 +101,7 @@ class Fund:
         dates = pd.date_range(
             pd.Timestamp(start_time),
             pd.Timestamp(end_time),
-            freq='{!s}S'.format(self.Strategy.trade_interval),
+            freq=f'{self.strategy.trade_interval}S',
         )
         for date in dates:
             val = self.step(date)

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from logging import getLogger
 from multiprocessing import Pool
 from typing import List
 from typing import Tuple
@@ -9,6 +10,9 @@ from pandas import Series
 from pandas import Timestamp
 
 from moneybot.fund import Fund
+
+
+logger = getLogger(__name__)
 
 
 def roi(values: List[float]) -> float:
@@ -57,7 +61,7 @@ def summary(
 # So that it can be pickled by multiprocessing.Pool
 def backtest(fund_dates: Tuple[Fund, str, str]) -> List[float]:
     fund, start, end = fund_dates
-    print('Testing from {!s} to {!s}'.format(start, end))
+    logger.info(f'Testing from {start} to {end}')
     return list(fund.begin_backtest(start, end))
 
 

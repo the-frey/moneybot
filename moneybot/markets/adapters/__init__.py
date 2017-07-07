@@ -2,6 +2,7 @@
 from abc import ABCMeta
 from abc import abstractmethod
 from datetime import datetime
+from logging import getLogger
 from typing import Generator
 from typing import Iterator
 from typing import List
@@ -10,10 +11,13 @@ from moneybot.markets.proposed_trade import ProposedTrade
 from moneybot.markets.state import MarketState
 
 
+logger = getLogger(__name__)
+
+
 class MarketAdapter(metaclass=ABCMeta):
 
     def __init__(self, market_history, config):
-        self.MarketHistory = market_history
+        self.market_history = market_history
         self.balances = config['backtesting']['initial_balances']
         self.fiat = config['fiat']
 
@@ -31,7 +35,7 @@ class MarketAdapter(metaclass=ABCMeta):
 
     def get_market_state(self, time: datetime) -> MarketState:
         # Get the latest chart data from the market
-        charts = self.MarketHistory.latest(time)
+        charts = self.market_history.latest(time)
         balances = self.get_balances()
         # We wrap these data in a MarketState,
         # which provides some convenience methods.
@@ -61,36 +65,44 @@ class MarketAdapter(metaclass=ABCMeta):
 
         # Check that proposed bid has a price:
         if not proposed.price:
-            print('WARN: Filtering out proposed trade: trade has no price. Proposed',
-                  str(proposed))
+            logger.warning(
+                f'Filtering out proposed trade (has no price): {proposed}.'
+            )
             return False
 
         # Check that we have enough to sell
-        if proposed.bid_amount > market_state.balances[proposed.from_coin]:
-            print('WARN: Filtering out proposed trade: proposing to sell more than is held. Proposed',
-                  str(proposed), 'but holding', market_state.balances[proposed.from_coin], proposed.from_coin)
+        held_amount = market_state.balances[proposed.from_coin]
+        if proposed.bid_amount > held_amount:
+            logger.warning(
+                "Filtering out proposed trade (can't sell more than is held): "
+                f"{proposed}. Holding {held_amount} {proposed.from_coin}."
+            )
             return False
 
         # Check that we are trading a positive amount for a positive amount
-        if proposed.bid_amount < 0 or \
-           proposed.ask_amount < 0:
-            print('WARN: Filtering out proposed trade: bid/ask amounts zero or negative. Proposed',
-                  str(proposed))
+        if proposed.bid_amount < 0 or proposed.ask_amount < 0:
+            logger.warning(
+                'Filtering out proposed trade (bid or ask amount < 0): '
+                f'{proposed}.'
+            )
             return False
 
-        # Check that the proposed trade minimum fiat trade amount.
+        # Check that the proposed trade exceeds minimum fiat trade amount.
         if (
             (proposed.from_coin == proposed.fiat and proposed.bid_amount < 0.0001) or
             (proposed.to_coin == proposed.fiat and proposed.ask_amount < 0.0001)
         ):
-            print('WARN: Filtering out proposed trade: transaction too small. Proposed',
-                  str(proposed))
+            logger.warning(
+                'Filtering out proposed trade (transaction too small): '
+                f'{proposed}.'
+            )
             return False
 
         # Check that the trade is on a market that exists.
         if proposed.market_name not in market_state.chart_data.keys():
-            print('WARN: Filtering out proposed trade: market name not in chart_data. Proposed',
-                  str(proposed))
+            logger.warning(
+                f'Filtering out proposed trade (unknown market): {proposed}.'
+            )
             return False
 
         return True

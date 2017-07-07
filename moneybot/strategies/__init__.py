@@ -23,9 +23,9 @@ class Strategy(metaclass=ABCMeta):
         # Interval between trades, in seconds
         self.trade_interval = config['trade_interval']
         # # MarketHistory stores historical market data
-        # self.MarketHistory = MarketHistory(self.config)
+        # self.market_history = MarketHistory(self.config)
         # # MarketAdapter executes trades, fetches balances
-        # self.MarketAdapter = MarketAdapter(self.config)
+        # self.market_adapter = MarketAdapter(self.config)
 
     @abstractmethod
     def propose_trades(
