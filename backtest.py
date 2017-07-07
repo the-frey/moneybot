@@ -4,7 +4,7 @@ import json
 from moneybot.evaluate import evaluate
 from moneybot.Fund import Fund
 from moneybot.market_adapters.BacktestMarketAdapter import BacktestMarketAdapter
-from moneybot.strategies.buffed_coin import BuffedCoinStrategy
+from moneybot.strategies.BuffedCoinStrategy import BuffedCoinStrategy
 
 
 with open('config.json.example') as cfg_file:
