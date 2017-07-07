@@ -7,17 +7,25 @@ from moneybot.evaluate import evaluate
 from moneybot.fund import Fund
 from moneybot.markets.adapters.backtest import BacktestMarketAdapter
 from moneybot.strategies.buffed_coin import BuffedCoinStrategy
+from moneybot.strategies.buy_hold import BuyHoldStrategy
+from moneybot.strategies.peak_rider import PeakRiderStrategy
+
+
+strategies = {
+    'buffed-coin': BuffedCoinStrategy,
+    'buy-hold': BuyHoldStrategy,
+    'peak-rider': PeakRiderStrategy,
+}
 
 
 def main(args):
     with open(args.config) as cfg_file:
         config = json.load(cfg_file)
 
-    # Try BuyHoldStrategy or BuffedCoinStrategy too
-    strat = Fund(BuffedCoinStrategy, BacktestMarketAdapter, config)
+    fund = Fund(strategies[args.strategy], BacktestMarketAdapter, config)
 
     summary = evaluate(
-        strat,
+        fund,
         '2017-01-01',
         '2017-06-29',
         duration_days=30,
@@ -41,6 +49,12 @@ if __name__ == '__main__':
         type=str,
         choices=['NOTSET', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         help='Python logging level',
+    )
+    parser.add_argument(
+        '-s', '--strategy',
+        default='buffed_coin',
+        type=str,
+        choices=strategies.keys(),
     )
     args = parser.parse_args()
 
