@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from moneybot.MarketState import MarketState
+from moneybot.markets.state import MarketState
 
 
 class ProposedTrade:

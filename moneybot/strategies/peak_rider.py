@@ -5,7 +5,7 @@ from typing import Tuple
 from pandas import DataFrame
 from pandas import Series
 
-from moneybot.strategies.BuffedCoinStrategy import BuffedCoinStrategy
+from moneybot.strategies.buffed_coin import BuffedCoinStrategy
 
 
 class PeakRiderStrategy(BuffedCoinStrategy):

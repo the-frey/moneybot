@@ -8,7 +8,7 @@ from pandas import date_range
 from pandas import Series
 from pandas import Timestamp
 
-from moneybot.Fund import Fund
+from moneybot.fund import Fund
 
 
 def roi(values: List[float]) -> float:

@@ -7,9 +7,9 @@ from typing import Iterator
 
 from poloniex import Poloniex
 
-from moneybot.market_adapters import MarketAdapter
-from moneybot.MarketState import MarketState
-from moneybot.ProposedTrade import ProposedTrade
+from moneybot.markets.adapters import MarketAdapter
+from moneybot.markets.proposed_trade import ProposedTrade
+from moneybot.markets.state import MarketState
 
 
 class LiveMarketAdapter(MarketAdapter):

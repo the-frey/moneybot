@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import pytest
 
-from moneybot.Fund import Fund
-from moneybot.market_adapters.BacktestMarketAdapter import BacktestMarketAdapter
-from moneybot.strategies.BuffedCoinStrategy import BuffedCoinStrategy
-from moneybot.strategies.BuyHoldStrategy import BuyHoldStrategy
-from moneybot.strategies.PeakRiderStrategy import PeakRiderStrategy
+from moneybot.fund import Fund
+from moneybot.markets.adapters.backtest import BacktestMarketAdapter
+from moneybot.strategies.buffed_coin import BuffedCoinStrategy
+from moneybot.strategies.buy_hold import BuyHoldStrategy
+from moneybot.strategies.peak_rider import PeakRiderStrategy
 
 
 @pytest.fixture

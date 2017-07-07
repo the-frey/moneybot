@@ -6,8 +6,8 @@ from typing import Generator
 from typing import Iterator
 from typing import List
 
-from moneybot.MarketState import MarketState
-from moneybot.ProposedTrade import ProposedTrade
+from moneybot.markets.proposed_trade import ProposedTrade
+from moneybot.markets.state import MarketState
 
 
 class MarketAdapter(metaclass=ABCMeta):

@@ -8,8 +8,8 @@ from typing import Type
 
 import pandas as pd
 
-from moneybot.market_adapters import MarketAdapter
-from moneybot.MarketHistory import MarketHistory
+from moneybot.markets.adapters import MarketAdapter
+from moneybot.markets.history import MarketHistory
 from moneybot.strategies import Strategy
 
 

@@ -1,3 +1,4 @@
+-e .
 funcy==1.8
 influxdb==4.1.1
 numpy==1.13.0
