@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import json
 
-from moneybot.Fund import Fund
-from moneybot.market_adapters.LiveMarketAdapter import LiveMarketAdapter
-from moneybot.strategies.BuffedCoinStrategy import BuffedCoinStrategy
+from moneybot.fund import Fund
+from moneybot.markets.adapters.live import LiveMarketAdapter
+from moneybot.strategies.buffed_coin import BuffedCoinStrategy
 
 
 with open('config.json') as cfg_file:
