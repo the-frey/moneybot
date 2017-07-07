@@ -24,18 +24,6 @@ Subsequently, you can stop/start it with `$ docker stop influxdb` and `$ docker 
 
 Restore [the most recent seed database](https://github.com/elsehow/moneybot/releases/tag/database) to your Influx instance for backtesting. This database will be updated automatically during live-trading, so you should only need to do this upon initial setup. See [Restoring influxDB](https://docs.influxdata.com/influxdb/v1.2/administration/backup_and_restore/#restore) for more information.
 
-# use
-
-First, make sure Influx is running.
-
-For an example of backtesting,
-
-```
-$ python3 backtest.py
-```
-
-You can view the strategies in `strategies/BuffedCoinStrategy.py` for an example, if you're interested in writing your own strategy!
-
 # test
 
 First, install [`tox`](https://tox.readthedocs.io/en/latest/):
@@ -56,15 +44,24 @@ This runs `mypy` over the `moneybot/` and `tests/` directories, then invokes [`p
 
 To recreate the testing environment (necessary when dependency versions change), add `-r` or `--recreate`. To run `pytest` with more detailed output, add `-e verbose`.
 
+# use
+
+First, make sure Influx is running.
+
+For an example of backtesting,
+
+```
+$ python3 examples/backtest.py
+```
+
+You can view the strategies in `strategies/BuffedCoinStrategy.py` for an example, if you're interested in writing your own strategy!
+
 # live trading
 
 (**NOTE**: See disclaimer!)
-If you want to live-trade,
-you will need Poloniex API keys. You can [generate those via the Poloniex web interface](https://www.youtube.com/watch?v=OScIbgXZoW0).
-You'll only need to allow "trading" permissions on the keys.
-See the `config.json.example` file, add your Poloniex api keys and save it as `config.json`.
+If you want to live-trade, you will need Poloniex API keys. You can [generate those via the Poloniex web interface](https://www.youtube.com/watch?v=OScIbgXZoW0). You'll only need to allow "trading" permissions on the keys. See the `config.json.example` file, add your Poloniex api keys and save it as `config.json`.
 
-For an example, see `live_trading.py`
+For an example, see `examples/live_trading.py`
 
 # disclaimer
 

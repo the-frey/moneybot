@@ -1,8 +1,3 @@
-To run the tests:
+To run the tests, check types, and check PEP8 compliance:
 
-    python3 test.py
-
-To check types:
-
-    mypy test.py --ignore-missing-imports
-    mypy.backtest.py --ignore-missing-imports
+    tox
