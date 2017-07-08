@@ -4,11 +4,11 @@ import logging
 from argparse import ArgumentParser
 
 from moneybot.evaluate import evaluate
+from moneybot.examples.strategies import BuffedCoinStrategy
+from moneybot.examples.strategies import BuyHoldStrategy
+from moneybot.examples.strategies import PeakRiderStrategy
 from moneybot.fund import Fund
 from moneybot.markets.adapters.backtest import BacktestMarketAdapter
-from moneybot.strategies.buffed_coin import BuffedCoinStrategy
-from moneybot.strategies.buy_hold import BuyHoldStrategy
-from moneybot.strategies.peak_rider import PeakRiderStrategy
 
 
 strategies = {

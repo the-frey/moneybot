@@ -11,7 +11,7 @@ import pandas as pd
 
 from moneybot.markets.adapters import MarketAdapter
 from moneybot.markets.history import MarketHistory
-from moneybot.strategies import Strategy
+from moneybot.strategy import Strategy
 
 
 logger = getLogger(__name__)

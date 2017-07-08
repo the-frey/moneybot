@@ -2,8 +2,8 @@
 from typing import Iterator
 
 from moneybot.markets.adapters import MarketAdapter
-from moneybot.markets.proposed_trade import ProposedTrade
 from moneybot.markets.state import MarketState
+from moneybot.strategy import ProposedTrade
 
 
 class BacktestMarketAdapter(MarketAdapter):
