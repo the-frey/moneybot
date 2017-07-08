@@ -7,7 +7,7 @@ from typing import Generator
 from typing import Iterator
 from typing import List
 
-from moneybot.markets.state import MarketState
+from moneybot.market.state import MarketState
 from moneybot.strategy import ProposedTrade
 
 

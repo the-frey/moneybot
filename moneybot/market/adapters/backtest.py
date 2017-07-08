@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from typing import Iterator
 
-from moneybot.markets.adapters import MarketAdapter
-from moneybot.markets.state import MarketState
+from moneybot.market.adapters import MarketAdapter
+from moneybot.market.state import MarketState
 from moneybot.strategy import ProposedTrade
 
 

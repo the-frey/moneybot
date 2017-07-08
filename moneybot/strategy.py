@@ -7,8 +7,8 @@ from typing import Generator
 from typing import List
 from typing import Set
 
-from moneybot.markets.history import MarketHistory
-from moneybot.markets.state import MarketState
+from moneybot.market.history import MarketHistory
+from moneybot.market.state import MarketState
 
 
 logger = getLogger(__name__)

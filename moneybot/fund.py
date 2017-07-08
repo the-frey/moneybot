@@ -9,8 +9,8 @@ from typing import Type
 
 import pandas as pd
 
-from moneybot.markets.adapters import MarketAdapter
-from moneybot.markets.history import MarketHistory
+from moneybot.market.adapters import MarketAdapter
+from moneybot.market.history import MarketHistory
 from moneybot.strategy import Strategy
 
 

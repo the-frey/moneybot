@@ -5,7 +5,7 @@ from moneybot.examples.strategies import BuffedCoinStrategy
 from moneybot.examples.strategies import BuyHoldStrategy
 from moneybot.examples.strategies import PeakRiderStrategy
 from moneybot.fund import Fund
-from moneybot.markets.adapters.backtest import BacktestMarketAdapter
+from moneybot.market.adapters.backtest import BacktestMarketAdapter
 
 
 @pytest.fixture
