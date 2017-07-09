@@ -4,7 +4,6 @@ import staticconf
 import yaml
 
 import moneybot
-from moneybot.clients import InfluxDB
 
 
 TEST_CONFIG = """
@@ -27,11 +26,3 @@ def config():
         yaml.load(TEST_CONFIG),
         namespace=moneybot.CONFIG_NS,
     )
-
-
-@pytest.fixture(scope='session', autouse=True)
-def db(config):
-    client = InfluxDB.get_client()
-    # db_name = moneybot.config.read_string('influxdb.database')
-    # client.create_database(db_name)
-    return client
