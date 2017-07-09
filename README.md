@@ -14,15 +14,13 @@ $ source venv/bin/activate
 $ pip3 install -r requirements.txt
 ```
 
-Next, install [InfluxDB](https://infuxdata.com) for your platform. Recommendation is to run InfluxDB in a Docker container, but it can also be run directly on your local system. If you want to use Docker, pull the latest official InfluxDB image (`$ docker pull influxdb`) and run it with the following command:
+Install [InfluxDB](https://influxdata.com) for your platform. On macOS, this is as easy as `$ brew install influxdb` (assuming you have Homebrew installed). We're working on making it possible to run this in a Docker container as well, but there is [a blocker](https://github.com/influxdata/influxdb/issues/8551) currently.
+
+To do backtesting, you'll need to populate InfluxDB with historical data. Check [the releases page](https://github.com/elsehow/moneybot/releases/tag/database) for the latest version of the seed database. This database will be updated automatically during live-trading, so you should only need to do this upon initial setup. The restore process is a [little complicated](https://docs.influxdata.com/influxdb/v1.2/administration/backup_and_restore/#restore) so we have a script that does the heavy lifting. It is configured with environment variables, so adjust the example below to suit your setup:
 
 ```
-$ docker run -d -p 8086:8086 --name=influxdb influxdb:latest
+$ DB_RELEASE=7-5-2017 DB_NAME=historical-poloniex INFLUX_DIR=/usr/local/var/influxdb ./local-services/influxdb/restore.sh
 ```
-
-Subsequently, you can stop/start it with `$ docker stop influxdb` and `$ docker start influxdb`.
-
-Restore [the most recent seed database](https://github.com/elsehow/moneybot/releases/tag/database) to your Influx instance for backtesting. This database will be updated automatically during live-trading, so you should only need to do this upon initial setup. See [Restoring influxDB](https://docs.influxdata.com/influxdb/v1.2/administration/backup_and_restore/#restore) for more information.
 
 # test
 
@@ -32,7 +30,7 @@ First, install [`tox`](https://tox.readthedocs.io/en/latest/):
 $ pip3 install tox
 ```
 
-The tests assume InfluxDB is reachable at 192.168.99.100:8086 (see [tests/conftest.py](https://github.com/elsehow/moneybot/blob/master/tests/conftest.py)). This happens to be the IP assigned to the Docker host when using `docker-machine` on a Mac. If your setup is different, modify the `config` fixture accordingly (or if it's different for enough people we can use an env var or something).
+The tests assume InfluxDB is reachable at localhost:8086 (see [tests/conftest.py](https://github.com/elsehow/moneybot/blob/master/tests/conftest.py)). If your setup is different, modify the `config` fixture accordingly (or if it's different for enough people we can use an env var or something).
 
 To run the tests:
 
@@ -46,22 +44,27 @@ To recreate the testing environment (necessary when dependency versions change),
 
 # use
 
-First, make sure Influx is running.
+Make sure InfluxDB is running.
 
-For an example of backtesting,
+There are a few `Strategy` implementations in `moneybot.examples.strategies`.
+
+>The strategies included herein are viable for live-trading use, but crypto trading is serious business. It's entirely possible to lose a lot of money, very quickly. The authors of this library provide these for the sake of illustration and assume no responsibility for their performance if deployed.
+
+## backtesting
 
 ```
-$ python3 examples/backtest.py
+$ python3 examples/backtest.py -c config.yml -s buffed-coin
 ```
 
-You can view the strategies in `strategies/BuffedCoinStrategy.py` for an example, if you're interested in writing your own strategy!
+## live trading
 
-# live trading
+**NOTE**: See disclaimer!
 
-(**NOTE**: See disclaimer!)
-If you want to live-trade, you will need Poloniex API keys. You can [generate those via the Poloniex web interface](https://www.youtube.com/watch?v=OScIbgXZoW0). You'll only need to allow "trading" permissions on the keys. See the `config.json.example` file, add your Poloniex api keys and save it as `config.json`.
+To live-trade, you will need Poloniex API keys. You can generate those via the [Poloniex web interface](https://www.youtube.com/watch?v=OScIbgXZoW0). You'll only need to allow "trading" permissions on the keys. See the `config-example.yaml` file, add your Poloniex credentials and save it as `config.yml`.
 
-For an example, see `examples/live_trading.py`
+```
+$ python3 examples/live_trading.py -c config.yml -s buffed-coin
+```
 
 # disclaimer
 
