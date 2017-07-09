@@ -7,13 +7,6 @@ import moneybot
 
 
 TEST_CONFIG = """
-influxdb:
-  host: localhost
-  port: 8086
-  username: root
-  password: root
-  database: historical-poloniex
-
 trading:
   fiat: BTC
   interval: 86400
