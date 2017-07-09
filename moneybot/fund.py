@@ -3,14 +3,11 @@ from datetime import datetime
 from logging import getLogger
 from time import sleep
 from time import time
-from typing import Dict
 from typing import Generator
-from typing import Type
 
 import pandas as pd
 
 from moneybot.market.adapters import MarketAdapter
-from moneybot.market.history import MarketHistory
 from moneybot.strategy import Strategy
 
 
@@ -22,18 +19,12 @@ class Fund:
     TODO Docstring
     '''
 
-    def __init__(
-        self,
-        strat: Type[Strategy],
-        market_adapter: Type[MarketAdapter],
-        config: Dict,
-    ) -> None:
-        self.config = config
-        self.strategy = strat(self.config)
-        # MarketHistory stores historical market data
-        self.market_history = MarketHistory(self.config)
+    def __init__(self, strategy: Strategy, adapter: MarketAdapter) -> None:
+        self.strategy = strategy
         # MarketAdapter executes trades, fetches balances
-        self.market_adapter = market_adapter(self.market_history, self.config)
+        self.market_adapter = adapter
+        # MarketHistory stores historical market data
+        self.market_history = adapter.market_history
 
     def step(self, time: datetime) -> float:
         market_state = self.market_adapter.get_market_state(time)

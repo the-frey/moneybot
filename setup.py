@@ -16,6 +16,7 @@ setup(
         'numpy',
         'pandas',
         # 'poloniex',
+        'PyStaticConfiguration[yaml]',
         'requests',
     ],
 

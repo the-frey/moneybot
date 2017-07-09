@@ -2,7 +2,6 @@
 from abc import ABCMeta
 from abc import abstractmethod
 from logging import getLogger
-from typing import Dict
 from typing import Generator
 from typing import List
 from typing import Set
@@ -150,15 +149,9 @@ class Strategy(metaclass=ABCMeta):
     how this is meant to be subclassed
     '''
 
-    def __init__(self, config: Dict) -> None:
-        self.config = config
-        self.fiat = config['fiat']
-        # Interval between trades, in seconds
-        self.trade_interval = config['trade_interval']
-        # # MarketHistory stores historical market data
-        # self.market_history = MarketHistory(self.config)
-        # # MarketAdapter executes trades, fetches balances
-        # self.market_adapter = MarketAdapter(self.config)
+    def __init__(self, fiat: str, trade_interval: int) -> None:
+        self.fiat = fiat
+        self.trade_interval = trade_interval  # Time between trades, in seconds
 
     @abstractmethod
     def propose_trades(

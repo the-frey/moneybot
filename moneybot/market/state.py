@@ -13,7 +13,7 @@ class MarketState:
 
     def __init__(
         self,
-        chart_data: Dict[str, float],
+        chart_data: Dict[str, Dict[str, float]],
         balances: Dict[str, float],
         time: datetime,
         fiat: str,

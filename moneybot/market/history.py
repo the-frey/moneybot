@@ -13,7 +13,9 @@ from influxdb import InfluxDBClient
 from pandas import DataFrame
 from pandas import Series
 from pandas import to_datetime
-from poloniex import Poloniex
+
+from moneybot.clients import InfluxDB
+from moneybot.clients import Poloniex
 
 
 YEAR_IN_SECS = 60 * 60 * 24 * 365
@@ -26,7 +28,7 @@ def format_time(ts: datetime) -> str:
 
 
 def scrape_since_last_reading(client: InfluxDBClient):
-    polo = Poloniex()
+    polo = Poloniex.get_client()
 
     def historical(ticker: str) -> Dict:
         url = f'https://graphs.coinmarketcap.com/currencies/{ticker}'
@@ -92,11 +94,13 @@ def scrape_since_last_reading(client: InfluxDBClient):
 
     # get the most recent chart data
     # already fetched from the db
-    latest_result = client.query('''
-    select * from scrapedChart
-    order by time desc
-    limit 1
-    ''')
+    latest_result = client.query(
+        ' '.join([
+            'select * from scrapedChart',
+            'order by time desc',
+            'limit 1',
+        ]),
+    )
 
     # Get the last time we fetched some data,
     # looking at the most recent result in the db
@@ -145,14 +149,8 @@ class MarketHistory:
     TODO Docstring
     '''
 
-    def __init__(self, config: Dict) -> None:
-        self.client = InfluxDBClient(
-            config['db']['hostname'],
-            config['db']['port'],
-            config['db']['username'],
-            config['db']['password'],
-            config['db']['database'],
-        )
+    def __init__(self) -> None:
+        self.client = InfluxDB.get_client()
 
     def scrape_latest(self) -> None:
         return scrape_since_last_reading(self.client)
@@ -164,14 +162,14 @@ class MarketHistory:
     # We could, in the future, address this by taking all the candlesticks since we last checked
     # and pass them through to the strategy together, sorted ny time.
     # Then, the strategy can then decide how to combine them.
-    def latest(self, time: str) -> Dict[str, Dict[str, float]]:
-        q = '''
-        select * from scrapedChart
-        where time <= '{!s}' and time > '{!s}' - 1d
-        group by currencyPair
-        order by time desc
-        limit 1
-        '''.format(time, time)
+    def latest(self, time: datetime) -> Dict[str, Dict[str, float]]:
+        q = ' '.join([
+            'select * from scrapedChart',
+            f"where time <= '{time!s}' and time > '{time!s}' - 1d",
+            'group by currencyPair',
+            'order by time desc',
+            'limit 1',
+        ])
         result_set = self.client.query(q)
         coin_generator_tuples = {
             r[0][1]['currencyPair']: list(r[1])[0]
@@ -189,12 +187,12 @@ class MarketHistory:
         key='price_usd',
     ) -> List[float]:
         currency_pair = f'{base}_{quote}'
-        q = '''
-        select * from scrapedChart
-        where currencyPair='{!s}'
-        and time <= '{!s}' and time > '{!s}' - {!s}d
-        order by time desc
-        '''.format(currency_pair, time, time, days_back)
+        q = ' '.join([
+            'select * from scrapedChart',
+            f"where currencyPair='{currency_pair}'",
+            f"and time <= '{time}' and time > '{time}' - {days_back}d",
+            'order by time desc',
+        ])
         result_set = self.client.query(q)
         prices = [(p['time'], p[key]) for p in result_set.get_points()]
         df = Series([p[1] for p in prices])

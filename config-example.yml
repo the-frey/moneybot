@@ -1,0 +1,14 @@
+influxdb:
+  host: localhost
+  port: 8086
+  username: root
+  password: root
+  database: historical-poloniex
+
+poloniex:
+  key: YOUR_API_KEY
+  secret: YOUR_API_SECRET
+
+trading:
+  fiat: BTC
+  interval: 86400  # 1 day

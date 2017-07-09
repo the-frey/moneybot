@@ -3,10 +3,12 @@ from abc import ABCMeta
 from abc import abstractmethod
 from datetime import datetime
 from logging import getLogger
+from typing import Dict
 from typing import Generator
 from typing import Iterator
 from typing import List
 
+from moneybot.market.history import MarketHistory
 from moneybot.market.state import MarketState
 from moneybot.strategy import ProposedTrade
 
@@ -16,10 +18,15 @@ logger = getLogger(__name__)
 
 class MarketAdapter(metaclass=ABCMeta):
 
-    def __init__(self, market_history, config):
-        self.market_history = market_history
-        self.balances = config['backtesting']['initial_balances']
-        self.fiat = config['fiat']
+    def __init__(
+        self,
+        history: MarketHistory,
+        initial_balances: Dict[str, float],
+        fiat: str,
+    ) -> None:
+        self.market_history = history
+        self.balances = initial_balances
+        self.fiat = fiat
 
     @abstractmethod
     def get_balances(self):

@@ -6,9 +6,9 @@ from typing import Callable
 from typing import Dict
 from typing import Iterator
 
-from poloniex import Poloniex
-
+from moneybot.clients import Poloniex
 from moneybot.market.adapters import MarketAdapter
+from moneybot.market.history import MarketHistory
 from moneybot.market.state import MarketState
 from moneybot.strategy import ProposedTrade
 
@@ -20,14 +20,13 @@ class LiveMarketAdapter(MarketAdapter):
 
     def __init__(
         self,
-        market_history: MarketState,
-        config: Dict,
+        market_history: MarketHistory,
+        fiat: str,
     ) -> None:
-        self.polo = Poloniex(config['livetrading']['poloniex']['pk'],
-                             config['livetrading']['poloniex']['sk'])
+        self.polo = Poloniex.get_client()
         self.market_history = market_history
         self.balances = self.get_balances()
-        self.fiat = config['fiat']
+        self.fiat = fiat
 
     def get_balances(self) -> Dict[str, float]:
         bals = self.polo.returnCompleteBalances()

@@ -1,52 +1,37 @@
 # -*- coding: utf-8 -*-
-import json
-
 import pytest
-from influxdb import InfluxDBClient
+import staticconf
+import yaml
+
+import moneybot
+from moneybot.clients import InfluxDB
 
 
 TEST_CONFIG = """
-{
-  "db": {
-    "hostname": "192.168.99.100",
-    "port": 8086,
-    "username": "root",
-    "password": "root",
-    "database": "historical-poloniex"
-  },
+influxdb:
+  host: localhost
+  port: 8086
+  username: root
+  password: root
+  database: historical-poloniex
 
-  "backtesting": {
-    "initial_balances": {
-      "BTC": 1
-    }
-  },
-
-  "livetrading": {
-    "poloniex": {
-      "pk": "YOUR_API_KEY",
-      "sk": "YOUR_API_SECRET"
-    }
-  },
-
-  "trade_interval": 86400,
-  "fiat": "BTC"
-}
+trading:
+  fiat: BTC
+  interval: 86400
 """
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='session', autouse=True)
 def config():
-    return json.loads(TEST_CONFIG)
+    staticconf.DictConfiguration(
+        yaml.load(TEST_CONFIG),
+        namespace=moneybot.CONFIG_NS,
+    )
 
 
 @pytest.fixture(scope='session', autouse=True)
 def db(config):
-    client = InfluxDBClient(
-        config['db']['hostname'],
-        config['db']['port'],
-        config['db']['username'],
-        config['db']['password'],
-        config['db']['database'],
-    )
-    client.create_database(config['db']['database'])
+    client = InfluxDB.get_client()
+    # db_name = moneybot.config.read_string('influxdb.database')
+    # client.create_database(db_name)
     return client

@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 import pytest
 
+from moneybot import config
 from moneybot.examples.strategies import BuffedCoinStrategy
 from moneybot.examples.strategies import BuyHoldStrategy
 from moneybot.examples.strategies import PeakRiderStrategy
 from moneybot.fund import Fund
+from moneybot.market.history import MarketHistory
 from moneybot.market.adapters.backtest import BacktestMarketAdapter
 
 
@@ -47,26 +49,26 @@ def expected_results():
     ]
 
 
-@pytest.mark.skip
-def test_strategies(config, expected_results):
+def test_strategies(expected_results):
     '''
     Strategies should produce their expected values
     '''
     # The start and end of our test period
     start = '2017-05-01'
     end = '2017-06-01'
+    fiat = config.read_string('trading.fiat')
+    interval = config.read_int('trading.interval')
 
     for expected in expected_results:
-        # Try BuyHoldStrategy or BuffedCoinStrategy too
-        fund = Fund(
-            expected['strategy'],
-            BacktestMarketAdapter,
-            config,
+        strategy = expected['strategy'](fiat, interval)
+        adapter = BacktestMarketAdapter(
+            MarketHistory(),
+            {'BTC': 1.0},
+            fiat,
         )
+        fund = Fund(strategy, adapter)
         res = list(fund.begin_backtest(start, end))
-        # print(expected['strategy'])
         # print(res)
-        # print(expected['values'])
         assert res == expected['values']
 
 
