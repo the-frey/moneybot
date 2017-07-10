@@ -63,7 +63,6 @@ def test_strategies(expected_results):
         strategy = expected['strategy'](fiat, interval)
         adapter = BacktestMarketAdapter(
             MarketHistoryMock(),
-            # MarketHistory(),
             {'BTC': 1.0},
             fiat,
         )

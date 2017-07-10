@@ -6,8 +6,11 @@ import pandas as pd
 
 class MarketHistoryMock:
 
-    _history = json.load(open('tests/mock-data/history.json', 'r'))
-    _charts = json.load(open('tests/mock-data/charts.json', 'r'))
+    def __init__(self):
+        with open('tests/mock-data/history.json', 'r') as f:
+            self._history = json.load(f)
+        with open('tests/mock-data/charts.json', 'r') as f:
+            self._charts = json.load(f)
 
     def latest(self, time: datetime) -> Dict[str, Dict[str, float]]:
         return self._charts[f'{time!s}']
