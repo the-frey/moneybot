@@ -6,14 +6,20 @@ import pandas as pd
 
 class MarketHistoryMock:
 
+    _history = None  # type: Dict
+    _charts = None   # type: Dict
+
     def __init__(self):
-        with open('tests/mock-data/history.json', 'r') as f:
-            self._history = json.load(f)
-        with open('tests/mock-data/charts.json', 'r') as f:
-            self._charts = json.load(f)
+        cls = type(self)
+        if cls._history is None:
+            with open('tests/mock-data/history.json', 'r') as f:
+                cls._history = json.load(f)
+        if cls._charts is None:
+            with open('tests/mock-data/charts.json', 'r') as f:
+                cls._charts = json.load(f)
 
     def latest(self, time: datetime) -> Dict[str, Dict[str, float]]:
-        return self._charts[f'{time!s}']
+        return type(self)._charts[f'{time!s}']
 
     def asset_history(
         self,
@@ -23,7 +29,7 @@ class MarketHistoryMock:
         days_back=30,
         key='price_usd',
     ) -> List[float]:
-        parsed_dict = self._history[f'{time!s}-{base}-{quote}']
+        parsed_dict = type(self)._history[f'{time!s}-{base}-{quote}']
         # HACK marshalling HACK
         # 1. reset index of parsed dict
         # 2. transpose from a row to a column
