@@ -6,8 +6,7 @@ from moneybot.examples.strategies import BuffedCoinStrategy
 from moneybot.examples.strategies import BuyHoldStrategy
 from moneybot.examples.strategies import PeakRiderStrategy
 from moneybot.fund import Fund
-# from moneybot.market.history import MarketHistory
-from .history_mock import MarketHistoryMock
+from moneybot.testing import MarketHistoryMock
 from moneybot.market.adapters.backtest import BacktestMarketAdapter
 
 
