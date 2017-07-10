@@ -1,5 +1,7 @@
 # MoneyBot
 
+[![Build Status](https://travis-ci.org/elsehow/moneybot.svg?branch=master)](https://travis-ci.org/elsehow/moneybot)
+
 MoneyBot allows you to backtest trading strategies, and deploy these strategies to live-trade, without changing code.
 
 For now, MoneyBot only supports Poloniex. However, a generic `MarketAdapter` pattern could allow trading over many exchanges. PRs welcome!
