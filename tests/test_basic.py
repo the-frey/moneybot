@@ -6,7 +6,7 @@ from moneybot.examples.strategies import BuffedCoinStrategy
 from moneybot.examples.strategies import BuyHoldStrategy
 from moneybot.examples.strategies import PeakRiderStrategy
 from moneybot.fund import Fund
-from moneybot.market.history import MarketHistory
+from moneybot.testing import MarketHistoryMock
 from moneybot.market.adapters.backtest import BacktestMarketAdapter
 
 
@@ -62,7 +62,7 @@ def test_strategies(expected_results):
     for expected in expected_results:
         strategy = expected['strategy'](fiat, interval)
         adapter = BacktestMarketAdapter(
-            MarketHistory(),
+            MarketHistoryMock(),
             {'BTC': 1.0},
             fiat,
         )

@@ -30,8 +30,6 @@ First, install [`tox`](https://tox.readthedocs.io/en/latest/):
 $ pip3 install tox
 ```
 
-The tests assume InfluxDB is reachable at localhost:8086 (see [tests/conftest.py](https://github.com/elsehow/moneybot/blob/master/tests/conftest.py)). If your setup is different, modify the `config` fixture accordingly (or if it's different for enough people we can use an env var or something).
-
 To run the tests:
 
 ```
