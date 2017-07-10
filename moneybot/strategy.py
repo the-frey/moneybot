@@ -14,6 +14,17 @@ logger = getLogger(__name__)
 
 
 class ProposedTrade:
+    '''
+    ProposedTrades represent possible trades
+    that have not yet been executed by a `MarketAdapter`.
+    They parlay data between the Strategy and the MarketAdapter.
+
+    Specifically, Strategies use a method `propose_trades()` to
+    return a list of ProposedTrades on each trading step. Using a
+    high-level API, a Strategy can propose a plausible trade.
+    The MarketAdapter then decides if this ProposedTrade trade is legal
+    and, if it is, attempts to execute it at the best possible price.
+    '''
 
     def __init__(
         self,
@@ -145,8 +156,21 @@ class ProposedTrade:
 
 class Strategy(metaclass=ABCMeta):
     '''
-    TODO Docstring
-    how this is meant to be subclassed
+    A Fund uses a Strategy to propose trades,
+    executed by the MarketAdapter.
+
+    Specifically, Strategies have a method `propose_trade()`,
+    which takes a MarketState and a MarketHistory,
+    returning a list of ProposedTrades for the MarketAdapter
+    to process at every training step.
+
+    The way in which trades are proposed at specific steps
+    is mostly up to callers of this library. In other words,
+    we imagine callers will subclass `Strategy` to create
+    their own Strategies.
+
+    This class also includes a few convenience methods for
+    common trade proposals.
     '''
 
     def __init__(self, fiat: str, trade_interval: int) -> None:

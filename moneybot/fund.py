@@ -16,7 +16,21 @@ logger = getLogger(__name__)
 
 class Fund:
     '''
-    TODO Docstring
+    Funds are the MoneyBot's highest level abstraction.
+    Funds have a Strategy, which proposes trades to
+    their MarketAdapter.
+
+    There are two ways for a Fund to run: live, or in a backtest.
+
+       my_fund.run_live()
+
+    or
+
+       my_fund.begin_backtest(start, end)
+
+    In both cases, the fund executes its private method `step(time)`
+    repeatedly. Strategies decide their own trading interval; this
+    dictates the temporal spacing between a fund's steps.
     '''
 
     def __init__(self, strategy: Strategy, adapter: MarketAdapter) -> None:
