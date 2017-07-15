@@ -1,13 +1,12 @@
-FROM  postgres:9.6.3
+FROM  postgres:9.6
 
-# Install unzip (lol)
-RUN   apt-get -qq update && \
-      apt-get -qq install -y unzip && \
-      rm -rf /var/lib/apt/lists/*
+# Install wget (lol)
+# RUN   apt-get -qq update && \
+#       apt-get -qq install -y wget && \
+#       rm -rf /var/lib/apt/lists/*
 
-# # Download and restore seed database
-# COPY  restore.sh ./
-# ENV   DB_RELEASE 7-5-2017
-# ENV   DB_NAME historical-poloniex
-# ENV   INFLUX_DIR /var/lib/influxdb
-# RUN   ./restore.sh
+# Download and restore seed database
+COPY  restore.sh ./
+ENV   DB_RELEASE  07-14-17
+COPY  07-14-17.sql ./
+RUN   ./restore.sh

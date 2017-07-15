@@ -1,12 +1,12 @@
 #!/usr/bin/env sh
 
-# Download latest release
-wget https://github.com/elsehow/moneybot/releases/download/database/${DB_RELEASE}.zip
-unzip ./${DB_RELEASE}.zip
+DB_RELEASE=07-14-17
 
-# Restore to InfluxDB
-influxd restore -metadir ${INFLUX_DIR}/meta ./${DB_RELEASE}
-influxd restore -database "${DB_NAME}" -datadir ${INFLUX_DIR}/data ./${DB_RELEASE}
+echo "Downloading latest release"
+wget https://github.com/elsehow/moneybot/releases/download/$DB_RELEASE/$DB_RELEASE.sql
 
-# Clean up artifacts
-rm -r ./${DB_RELEASE} ./${DB_RELEASE}.zip
+echo "Restoring Database to dockerized"
+cat ./$DB_RELEASE.sql |  docker exec -i postgres psql -U postgres
+
+echo "cleaning up artifacts"
+rm -r ./$DB_RELEASE.sql
