@@ -4,6 +4,7 @@ from datetime import datetime
 from datetime import timedelta
 from dateutil import parser
 from logging import getLogger
+from pprint import pprint
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -51,9 +52,9 @@ def scrape_since_last_reading(client: InfluxDBClient):
 
     def scraped_chart(currency_pair: str, row: Series) -> Dict:
         return {
-            'measurement': 'scrapedChart',
+            'measurement': 'scraped_chart',
             'tags': {
-                'currencyPair': currency_pair,
+                'currency_pair': currency_pair,
             },
             'time': format_time(row.name),
             'fields': row.to_dict(),
@@ -61,7 +62,7 @@ def scrape_since_last_reading(client: InfluxDBClient):
 
     def contemporary_usd_price(row) -> float:
         contemporary_btc_price = btc_price_hist['price_usd'].asof(row.name)
-        return row['weightedAverage'] * contemporary_btc_price
+        return row['weighted_average'] * contemporary_btc_price
 
     def historical_prices_of(
         pair: str,
@@ -89,7 +90,7 @@ def scrape_since_last_reading(client: InfluxDBClient):
             chart = scraped_chart(pair, row)
             # for some reason, when there's no chart data to report,
             # the API will give us some reading with all 0s.
-            if chart['fields']['volume'] == 0 and chart['fields']['weightedAverage'] == 0:
+            if chart['fields']['volume'] == 0 and chart['fields']['weighted_average'] == 0:
                 # we will just ignore these
                 pass
             else:
@@ -99,7 +100,7 @@ def scrape_since_last_reading(client: InfluxDBClient):
     # already fetched from the db
     latest_result = client.query(
         ' '.join([
-            'select * from scrapedChart',
+            'select * from scraped_chart',
             'order by time desc',
             'limit 1',
         ]),
@@ -137,7 +138,7 @@ def scrape_since_last_reading(client: InfluxDBClient):
             'market_cap_by_available_supply',
             'volume_usd'
         ], axis=1)
-        hist_df = hist_df.rename(columns={key: 'weightedAverage'})
+        hist_df = hist_df.rename(columns={key: 'weighted_average'})
         return hist_df
 
     # Finally, write USD_BTC history to the client as well
@@ -158,7 +159,7 @@ class MarketHistory:
     def scrape_latest(self) -> None:
         return scrape_since_last_reading(self.client)
 
-    # String -> { 'BTC_ETH': { weightedAverage, ...} ...}
+    # String -> { 'BTC_ETH': { weighted_average, ...} ...}
     # TODO One issue here is that we are *only* getting the latest (15-minute) candlestic
     # So, if we are only trading once per day, certain values (like volume) will be misleading,
     # as they won't cover teh whole 24-hour period.
@@ -168,22 +169,23 @@ class MarketHistory:
     def latest(self, time: datetime) -> Dict[str, Dict[str, float]]:
         cursor = self.client.cursor()
         prior_date = time - timedelta(days=1)
-        q = ' '.join([
-            'select * from scrapedChart',
-            f"where time <= '{time!s}' and time > '{prior_date!s}'",
-            'group by currencyPair',
-            'order by time desc',
+        query = ' '.join([
+            'SELECT DISTINCT ON (currency_pair) *',
+            'FROM scraped_chart',
+            'WHERE time <= %s AND time > %s',
+            'ORDER BY currency_pair, time DESC',
         ])
-        cursor.execute(q)
-        results = cursor.fetchall()
-        print(results)
-        # result_set = self.client.query(q)
-        # coin_generator_tuples = {
-        #     r[0][1]['currencyPair']: list(r[1])[0]
-        #     for r
-        #     in result_set.items()
-        # }
-        return coin_generator_tuples
+        cursor.execute(query, (time, prior_date))
+        rows = cursor.fetchall()
+        col_names = [column.name for column in cursor.description]
+        row_dicts = [dict(zip(col_names, row)) for row in rows]
+        result = {
+            row_dict['currency_pair']: row_dict
+            for row_dict
+            in row_dicts
+        }
+        # pprint(result)
+        return result
 
     def asset_history(
         self,
@@ -196,8 +198,8 @@ class MarketHistory:
         currency_pair = f'{base}_{quote}'
         prior_date = time - timedelta(days=days_back)
         q = ' '.join([
-            'select * from scrapedChart',
-            f"where currencyPair='{currency_pair}'",
+            'select * from scraped_chart',
+            f"where currency_pair='{currency_pair}'",
             f"and time <= '{time}' and time > '{time!s}' - {prior_date!s}d",
             'order by time desc',
         ])

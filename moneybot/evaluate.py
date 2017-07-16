@@ -71,6 +71,7 @@ def backtests(
 ) -> Iterable[List[float]]:
     for i, start_time in enumerate(start_times[:-1]):
         end_time = start_times[i + 1]
+        logger.info(f'Testing from {start_time} to {end_time}')
         yield list(fund.begin_backtest(start_time, end_time))
 
 

@@ -7,6 +7,6 @@ FROM  postgres:9.6
 
 # Download and restore seed database
 COPY  restore.sh ./
-ENV   DB_RELEASE  07-14-17
+ENV   DB_RELEASE 07-14-17
 COPY  07-14-17.sql ./
 RUN   ./restore.sh
