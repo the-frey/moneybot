@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import time
 from datetime import datetime
+from datetime import timedelta
 from dateutil import parser
 from logging import getLogger
 from typing import Dict
@@ -9,12 +10,13 @@ from typing import Optional
 
 import requests
 from funcy import compose
+# TODO this should be postgresified
 from influxdb import InfluxDBClient
 from pandas import DataFrame
 from pandas import Series
 from pandas import to_datetime
 
-from moneybot.clients import InfluxDB
+from moneybot.clients import Postgres
 from moneybot.clients import Poloniex
 
 
@@ -27,6 +29,7 @@ def format_time(ts: datetime) -> str:
     return ts.strftime('%Y-%m-%d %H:%M:%S')
 
 
+# TODO This should be postgresified
 def scrape_since_last_reading(client: InfluxDBClient):
     polo = Poloniex.get_client()
 
@@ -150,7 +153,7 @@ class MarketHistory:
     '''
 
     def __init__(self) -> None:
-        self.client = InfluxDB.get_client()
+        self.client = Postgres.get_client()
 
     def scrape_latest(self) -> None:
         return scrape_since_last_reading(self.client)
@@ -163,34 +166,39 @@ class MarketHistory:
     # and pass them through to the strategy together, sorted ny time.
     # Then, the strategy can then decide how to combine them.
     def latest(self, time: datetime) -> Dict[str, Dict[str, float]]:
+        cursor = self.client.cursor()
+        prior_date = time - timedelta(days=1)
         q = ' '.join([
             'select * from scrapedChart',
-            f"where time <= '{time!s}' and time > '{time!s}' - 1d",
+            f"where time <= '{time!s}' and time > '{prior_date!s}'",
             'group by currencyPair',
             'order by time desc',
-            'limit 1',
         ])
-        result_set = self.client.query(q)
-        coin_generator_tuples = {
-            r[0][1]['currencyPair']: list(r[1])[0]
-            for r
-            in result_set.items()
-        }
+        cursor.execute(q)
+        results = cursor.fetchall()
+        print(results)
+        # result_set = self.client.query(q)
+        # coin_generator_tuples = {
+        #     r[0][1]['currencyPair']: list(r[1])[0]
+        #     for r
+        #     in result_set.items()
+        # }
         return coin_generator_tuples
 
     def asset_history(
         self,
-        time: str,
+        time: datetime,
         base: str,
         quote: str,
-        days_back=30,
-        key='price_usd',
+        days_back: int=30,
+        key: str ='price_usd',
     ) -> List[float]:
         currency_pair = f'{base}_{quote}'
+        prior_date = time - timedelta(days=days_back)
         q = ' '.join([
             'select * from scrapedChart',
             f"where currencyPair='{currency_pair}'",
-            f"and time <= '{time}' and time > '{time}' - {days_back}d",
+            f"and time <= '{time}' and time > '{time!s}' - {prior_date!s}d",
             'order by time desc',
         ])
         result_set = self.client.query(q)
