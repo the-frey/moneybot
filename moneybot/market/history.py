@@ -8,6 +8,7 @@ from typing import List
 from pandas import Series
 
 from moneybot.clients import Postgres
+from moneybot.market.scrape import scrape_since_last_reading
 
 
 logger = getLogger(__name__)
@@ -22,8 +23,7 @@ class MarketHistory:
         self.client = Postgres.get_client()
 
     def scrape_latest(self) -> None:
-        raise NotImplementedError
-    #     return scrape_since_last_reading(self.client)
+        return scrape_since_last_reading()
 
     # String -> { 'BTC_ETH': { weighted_average, ...} ...}
     # TODO One issue here is that we are *only* getting the latest (15-minute) candlestic

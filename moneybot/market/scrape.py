@@ -5,7 +5,6 @@ from logging import getLogger
 from typing import Optional
 from typing import Dict
 from typing import Iterable
-from typing import Tuple
 from funcy import compose
 from funcy import partial
 
@@ -15,6 +14,7 @@ from pandas import Series
 
 from moneybot.clients import Postgres
 from moneybot.clients import Poloniex
+from poloniex import Poloniex as _Poloniex
 
 
 YEAR_IN_SECS = 60 * 60 * 24 * 365
@@ -56,7 +56,10 @@ def marshall(hist_df):
     hist_df['weighted_average'] = hist_df['price_usd']
     hist_df['time'] = hist_df.index
     hist_df['currency_pair'] = hist_df.apply(lambda x: 'USD_BTC', axis=1)
-    nothing_burger = lambda: hist_df.apply(lambda x: None, axis=1)
+
+    def nothing_burger():
+        return hist_df.apply(lambda x: None, axis=1)
+
     hist_df['open'] = nothing_burger()
     hist_df['high'] = nothing_burger()
     hist_df['low'] = nothing_burger()
@@ -66,13 +69,13 @@ def marshall(hist_df):
 
 
 def historical_prices_of(
-        polo: Poloniex,
+        polo: _Poloniex,
         btc_price_history: Series,
         pair: str,
         period: int = 900,
         start: Optional[float] = None,
         end: Optional[float] = None
-        ) -> Iterable[Series]:
+) -> Iterable[Series]:
     '''
     Returns a series of time-indexed prices.
     `pair` is of the form e.g. 'BTC_ETH',
@@ -110,11 +113,13 @@ def historical_prices_of(
         else:
             yield row
 
-def insert (cursor, row):
-    return cursor.execute(
-         """INSERT INTO scraped_chart (time, currency_pair, high, low, price_usd, quote_volume, volume, weighted_average)
-        VALUES (%(time)s, %(currency_pair)s, %(high)s, %(low)s, %(price_usd)s, %(quote_volume)s, %(volume)s, %(weighted_average)s);""",
-        row.to_dict())
+
+def insert(cursor, row):
+    return cursor.execute("""
+    INSERT INTO scraped_chart (time, currency_pair, high, low, price_usd, quote_volume, volume, weighted_average)
+    VALUES (%(time)s, %(currency_pair)s, %(high)s, %(low)s, %(price_usd)s, %(quote_volume)s, %(volume)s, %(weighted_average)s);""",
+                          row.to_dict())
+
 
 def scrape_since_last_reading():
 
