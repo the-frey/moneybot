@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-DB_RELEASE=2017-14-07
+DB_RELEASE=2017-07-14
 
 echo "Downloading latest release"
 wget https://github.com/elsehow/moneybot/releases/download/$DB_RELEASE/$DB_RELEASE.sql
