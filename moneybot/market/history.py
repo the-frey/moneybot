@@ -4,7 +4,6 @@ from datetime import datetime
 from datetime import timedelta
 from dateutil import parser
 from logging import getLogger
-from pprint import pprint
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -184,7 +183,7 @@ class MarketHistory:
             for row_dict
             in row_dicts
         }
-        # pprint(result)
+        cursor.close()
         return result
 
     def asset_history(
@@ -192,19 +191,20 @@ class MarketHistory:
         time: datetime,
         base: str,
         quote: str,
-        days_back: int=30,
-        key: str ='price_usd',
+        days_back: int=30
     ) -> List[float]:
+        cursor = self.client.cursor()
         currency_pair = f'{base}_{quote}'
         prior_date = time - timedelta(days=days_back)
-        q = ' '.join([
-            'select * from scraped_chart',
-            f"where currency_pair='{currency_pair}'",
-            f"and time <= '{time}' and time > '{time!s}' - {prior_date!s}d",
+        query = ' '.join([
+            'select time, price_usd from scraped_chart',
+            'where currency_pair=%s',
+            'and time <= %s and time > %s',
             'order by time desc',
         ])
-        result_set = self.client.query(q)
-        prices = [(p['time'], p[key]) for p in result_set.get_points()]
-        df = Series([p[1] for p in prices])
-        df.index = [p[0] for p in prices]
+        cursor.execute(query, (currency_pair, time, prior_date))
+        rows = cursor.fetchall()
+        df = Series([p[1] for p in rows])
+        df.index = [p[0] for p in rows]
+        cursor.close()
         return df
