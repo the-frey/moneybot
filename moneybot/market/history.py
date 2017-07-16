@@ -35,13 +35,16 @@ class MarketHistory:
     def latest(self, time: datetime) -> Dict[str, Dict[str, float]]:
         cursor = self.client.cursor()
         prior_date = time - timedelta(days=1)
-        query = ' '.join([
-            'SELECT DISTINCT ON (currency_pair) *',
-            'FROM scraped_chart',
-            'WHERE time <= %s AND time > %s',
-            'ORDER BY currency_pair, time DESC',
-        ])
-        cursor.execute(query, (time, prior_date))
+        query = cursor.mogrify(
+            (
+                'SELECT DISTINCT ON (currency_pair) * FROM scraped_chart '
+                'WHERE time <= %s AND time > %s '
+                'ORDER BY currency_pair, time DESC'
+            ),
+            (time, prior_date),
+        )
+        logger.debug(query)
+        cursor.execute(query)
         rows = cursor.fetchall()
         col_names = [column.name for column in cursor.description]
         row_dicts = [dict(zip(col_names, row)) for row in rows]
@@ -63,13 +66,16 @@ class MarketHistory:
         cursor = self.client.cursor()
         currency_pair = f'{base}_{quote}'
         prior_date = time - timedelta(days=days_back)
-        query = ' '.join([
-            'select time, price_usd from scraped_chart',
-            'where currency_pair=%s',
-            'and time <= %s and time > %s',
-            'order by time desc',
-        ])
-        cursor.execute(query, (currency_pair, time, prior_date))
+        query = cursor.mogrify(
+            (
+                'SELECT time, price_usd FROM scraped_chart '
+                'WHERE currency_pair = %s AND time <= %s AND time > %s '
+                'ORDER BY time DESC'
+            ),
+            (currency_pair, time, prior_date),
+        )
+        logger.debug(query)
+        cursor.execute(query)
         rows = cursor.fetchall()
         df = Series([p[1] for p in rows])
         df.index = [p[0] for p in rows]
